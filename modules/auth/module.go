@@ -10,6 +10,7 @@ import (
 	"github.com/yudhiana/web-api/modules/auth/service"
 	userService "github.com/yudhiana/web-api/modules/user/service"
 	"github.com/yudhiana/web-api/pkg/cookie"
+	"github.com/yudhiana/web-api/pkg/router"
 	"github.com/yudhiana/web-api/pkg/security"
 )
 
@@ -46,7 +47,7 @@ func NewModule(
 }
 
 // RegisterRoutes mendaftarkan rute internal modul Auth ke HTTP router
-func (m *Module) RegisterRoutes(mux *http.ServeMux) {
+func (m *Module) RegisterRoutes(mux router.RouteRegistrar) {
 	// Endpoint Publik
 	mux.HandleFunc("POST /api/auth/register", m.AuthHandler.Register)
 	mux.HandleFunc("POST /api/auth/login", m.AuthHandler.Login)

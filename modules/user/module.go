@@ -6,6 +6,7 @@ import (
 	"github.com/yudhiana/web-api/modules/user/handler"
 	"github.com/yudhiana/web-api/modules/user/repository"
 	"github.com/yudhiana/web-api/modules/user/service"
+	"github.com/yudhiana/web-api/pkg/router"
 )
 
 // Module membungkus seluruh dependensi modul User
@@ -29,7 +30,7 @@ func NewModule() *Module {
 }
 
 // RegisterRoutes mendaftarkan rute internal modul User ke HTTP Multiplexer
-func (m *Module) RegisterRoutes(mux *http.ServeMux, requireAuth func(http.Handler) http.Handler) {
+func (m *Module) RegisterRoutes(mux router.RouteRegistrar, requireAuth func(http.Handler) http.Handler) {
 	mux.Handle("GET /api/user/profile", requireAuth(http.HandlerFunc(m.Handler.GetProfile)))
 	mux.Handle("PUT /api/user/profile", requireAuth(http.HandlerFunc(m.Handler.UpdateProfile)))
 }

@@ -3,13 +3,15 @@ package config
 import (
 	"os"
 	"strconv"
+	"strings"
 	"time"
 )
 
-// Config menyimpan seluruh konfigurasi aplikasi termasuk secret keys dan cookie settings
+// Config menyimpan seluruh konfigurasi aplikasi termasuk secret keys, cookie settings, dan debug mode
 type Config struct {
 	Port               string
 	Environment        string // "development" atau "production"
+	DebugMode          bool   // Menampilkan rute, banner, serta incoming/outgoing log
 	AccessTokenSecret  string
 	RefreshTokenSecret string
 	CSRFSecret         string
@@ -30,6 +32,7 @@ func LoadConfig() *Config {
 	return &Config{
 		Port:               getEnv("PORT", "8080"),
 		Environment:        env,
+		DebugMode:          getEnvAsBool("DEBUG_MODE", !isProd), // default true di development
 		AccessTokenSecret:  getEnv("ACCESS_TOKEN_SECRET", "super-secret-access-token-key-change-in-production-min-32-chars!"),
 		RefreshTokenSecret: getEnv("REFRESH_TOKEN_SECRET", "super-secret-refresh-token-key-change-in-production-min-32-chars!"),
 		CSRFSecret:         getEnv("CSRF_SECRET", "super-secret-csrf-key-change-in-production-min-32-chars!"),
@@ -57,4 +60,13 @@ func getEnvAsInt(key string, defaultVal int) int {
 		return defaultVal
 	}
 	return val
+}
+
+func getEnvAsBool(key string, defaultVal bool) bool {
+	valStr := os.Getenv(key)
+	if valStr == "" {
+		return defaultVal
+	}
+	valStr = strings.ToLower(valStr)
+	return valStr == "true" || valStr == "1" || valStr == "yes"
 }
