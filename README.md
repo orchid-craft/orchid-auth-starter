@@ -94,9 +94,13 @@ Aplikasi dibangun menggunakan template arsitektur **Orchid Starter** dengan rout
     └── auth_flow_test.go                         # End-to-end integration test
 ```
 
-### Prinsip Modul:
-1. **Low Coupling, High Cohesion**: Modul `user` tidak mengimpor modul `auth`. Komunikasi identitas login dilakukan melalui helper context di `pkg/security` dan dependensi eksplisit antarmuka (*interface*).
-2. **Single Responsibility**: `pkg/security` murni menangani kriptografi token; `modules/auth` menangani aturan bisnis autentikasi, pelacakan sesi, dan deteksi ancaman.
+### Prinsip Arsitektur:
+1. **Low Coupling, High Cohesion**: Modul `user` tidak mengimpor modul `auth`. Komunikasi identitas login dilakukan melalui helper context di `security/` dan dependensi eksplisit antarmuka (*interface*).
+2. **Separation of Concerns**:
+   - `delivery/`: Hanya menangani pembacaan HTTP, validasi payload, dan formatting response.
+   - `usecase/`: Berisi murni logika bisnis dan terisolasi dari transport HTTP maupun SQL driver.
+   - `repository/`: Mengabstraksi persistensi data (database/in-memory) via interface.
+   - `security/`: Murni menangani kriptografi token dan CSRF.
 
 ---
 
@@ -258,36 +262,38 @@ Diagram kelas ini mengilustrasikan keterhubungan antarmuka (*interface*), modul-
 
 ```mermaid
 classDiagram
-    class UserModule {
-        +UserRepository Repo
-        +UserService Service
-        +UserHandler Handler
-        +RegisterRoutes(mux, requireAuth)
+    class Container {
+        +chi.Mux App
+        +LocalConfig Cfg
+        +DirectInjection DI
+        +LogEntry Log
+        +Close() error
     }
 
-    class AuthModule {
-        +SessionRepository SessionRepo
-        +AuthService AuthService
-        +AuthHandler AuthHandler
-        +AuthMiddleware AuthMiddleware
-        +CSRFMiddleware CSRFMiddleware
-        +RegisterRoutes(mux)
+    class DirectInjection {
+        +UserRepositoryInterface UserRepo
+        +SessionRepositoryInterface SessionRepo
+        +UserUsecaseInterface UserUsecase
+        +AuthUsecaseInterface AuthUsecase
+        +JWTManager JWTManager
+        +CSRFManager CSRFManager
+        +CookieManager CookieManager
     }
 
-    class UserService {
-        <<interface>>
-        +CreateUser(ctx, dto) UserResponse
-        +VerifyCredentials(ctx, email, pass) User
-        +GetByID(ctx, id) User
-        +GetProfile(ctx, id) UserResponse
-        +UpdateProfile(ctx, id, dto) UserResponse
-    }
-
-    class AuthService {
+    class UserUsecaseInterface {
         <<interface>>
         +Register(ctx, req) UserResponse
+        +GetByID(ctx, id) UserResponse
+        +GetByEmail(ctx, email) User
+        +Update(ctx, id, req) UserResponse
+        +List(ctx) List~UserResponse~
+    }
+
+    class AuthUsecaseInterface {
+        <<interface>>
+        +Register(ctx, req) AuthResponse
         +Login(ctx, req) AuthResponse
-        +RefreshToken(ctx, rawToken) AuthResponse
+        +RefreshToken(ctx, rawToken) RefreshResponse
         +Logout(ctx, rawToken) error
     }
 
@@ -314,32 +320,34 @@ classDiagram
         +ClearAuthCookies(w)
     }
 
-    UserModule --> UserService
-    AuthModule --> AuthService
-    AuthModule --> CookieManager
-    AuthService --> UserService : "verifikasi kredensial & profil"
-    AuthService --> JWTManager : "signing & verifikasi dual-secret JWT"
-    AuthService --> CSRFManager : "generasi & verifikasi token HMAC CSRF"
+    Container --> DirectInjection : "memiliki"
+    DirectInjection --> AuthUsecaseInterface : "injeksi"
+    DirectInjection --> UserUsecaseInterface : "injeksi"
+    DirectInjection --> CookieManager : "injeksi"
+    AuthUsecaseInterface --> UserUsecaseInterface : "verifikasi & ambil profil"
+    AuthUsecaseInterface --> JWTManager : "signing & verifikasi dual-secret JWT"
+    AuthUsecaseInterface --> CSRFManager : "generasi & verifikasi HMAC CSRF"
 ```
 
 ### 📋 Penjelasan Komponen & Hubungan Antar Modul:
-1. **`UserModule`**:
-   - Berfungsi sebagai *Bounded Context* pengelolaan pengguna.
-   - Mengenkapsulasi `UserRepository` (persistensi data), `UserService` (logika bisnis & hashing kata sandi), dan `UserHandler` (endpoint HTTP profil).
-2. **`AuthModule`**:
-   - Berfungsi sebagai *Bounded Context* autentikasi dan sesi keamanan.
-   - Mengenkapsulasi `SessionRepository` (pelacakan status refresh token), `AuthService` (orkestrasi login, rotasi token, dan deteksi reuse attack), `AuthHandler` (endpoint HTTP autentikasi), serta `AuthMiddleware` dan `CSRFMiddleware`.
-3. **`JWTManager` (`pkg/security`)**:
+1. **`Container` & `DirectInjection` (`internal/bootstrap/container`)**:
+   - Titik pusat inisialisasi aplikasi (IoC / Dependency Injection).
+   - Menghubungkan router Chi (`chi.Mux`), konfigurasi aplikasi (`LocalConfig`), structured logger (`logos`), dan seluruh usecase serta repository.
+2. **`UserUsecaseInterface` (`modules/user/usecase`)**:
+   - Mengenkapsulasi aturan bisnis pengguna (registrasi akun, hashing kata sandi dengan Bcrypt, pengelolaan profil).
+3. **`AuthUsecaseInterface` (`modules/auth/usecase`)**:
+   - Mengenkapsulasi orkestrasi autentikasi (login, penerbitan dual-secret token, Refresh Token Rotation, dan deteksi reuse attack).
+4. **`JWTManager` (`security/`)**:
    - Komponen platform keamanan yang mengelola penandatanganan dan validasi JWT.
    - Memastikan pemisahan mutlak (*cryptographic isolation*) antara `AccessTokenSecret` (durasi pendek) dan `RefreshTokenSecret` (durasi panjang).
-4. **`CSRFManager` (`pkg/security`)**:
+5. **`CSRFManager` (`security/`)**:
    - Menghasilkan token CSRF bertanda tangan HMAC-SHA256 (`<nonce>.<signature>`) menggunakan `CSRFSecret`.
    - Melakukan validasi token *Double Submit* dengan perbandingan waktu-konstan (*constant-time comparison*) untuk menangkal serangan waktu (*timing attacks*).
-5. **`CookieManager` (`pkg/cookie`)**:
+6. **`CookieManager` (`pkg/cookie`)**:
    - Mengelola atribut keamanan cookie HTTP (`HttpOnly`, `SameSite`, `Secure`, `Path`, dan `MaxAge`) secara seragam dan terpusat.
-6. **Pola Komunikasi Antar Modul (Decoupled & Inverted)**:
-   - `AuthService` berkomunikasi dengan modul pengguna murni melalui antarmuka `UserService` (tidak mengakses repository pengguna secara langsung).
-   - Middleware autentikasi menyuntikkan klaim identitas ke `r.Context()` melalui abstraksi `pkg/security/context.go`, sehingga modul lain (seperti modul `user`) dapat membaca identitas pengguna tanpa harus mengimpor modul `auth`.
+7. **Pola Komunikasi Antar Modul (Decoupled & Inverted)**:
+   - `authUsecase` berkomunikasi dengan modul pengguna murni melalui antarmuka `UserUsecaseInterface` (tidak mengakses repository pengguna secara langsung).
+   - Middleware autentikasi menyuntikkan klaim identitas ke `r.Context()` melalui abstraksi `security/context.go`, sehingga modul lain (seperti modul `user`) dapat membaca identitas pengguna tanpa harus mengimpor modul `auth`.
 
 ---
 
@@ -486,29 +494,34 @@ flowchart TD
 
 | Method | Endpoint | Proteksi Auth | Proteksi CSRF | Deskripsi |
 |---|---|:---:|:---:|---|
-| `POST` | `/api/auth/register` | ❌ Publik | ❌ Publik | Mendaftarkan pengguna baru |
+| `GET` | `/health` / `/health-check` | ❌ Publik | ❌ Publik | Health check status server |
+| `POST` | `/api/auth/register` | ❌ Publik | ❌ Publik | Mendaftarkan pengguna baru & auto-login |
 | `POST` | `/api/auth/login` | ❌ Publik | ❌ Publik | Autentikasi pengguna & set cookies |
-| `GET` | `/api/csrf-token` | ❌ Publik | ❌ Publik | Mendapatkan CSRF cookie & token awal |
+| `GET` | `/api/auth/csrf-token` | ❌ Publik | ❌ Publik | Mendapatkan CSRF cookie & token awal |
 | `POST` | `/api/auth/refresh` | 🍪 Refresh Cookie | ✅ Wajib | Rotasi refresh token & access token baru |
 | `POST` | `/api/auth/logout` | 🍪 Access Token | ✅ Wajib | Revokasi sesi & pembersihan cookies |
-| `GET` | `/api/user/profile` | 🍪 Access Token | ❌ Safe Method | Melihat profil pengguna saat ini |
-| `PUT` | `/api/user/profile` | 🍪 Access Token | ✅ Wajib | Memperbarui profil (mutasi data terproteksi) |
+| `GET` | `/api/me` *(alias `/api/user/profile`)* | 🍪 Access Token | ❌ Safe Method | Melihat profil pengguna saat ini |
+| `PUT` | `/api/me` *(alias `/api/user/profile`)* | 🍪 Access Token | ✅ Wajib | Memperbarui profil (mutasi data terproteksi) |
+| `GET` | `/api/users` | 🍪 Access Token | ❌ Safe Method | Daftar seluruh pengguna terdaftar |
 
 ---
 
 ## ⚙️ Konfigurasi Environment
 
-Aplikasi dapat dikonfigurasi melalui environment variables:
+Aplikasi dikonfigurasi melalui environment variables (didukung oleh `caarlos0/env/v11` dan `.env` via `godotenv`):
 
 | Variable | Default | Keterangan |
 |---|---|---|
-| `PORT` | `8080` | Port listening HTTP server |
+| `APP_PORT` | `8080` | Port listening HTTP server |
+| `APP_HOST` | `0.0.0.0` | Host binding HTTP server |
 | `APP_ENV` | `development` | Set `production` untuk mengaktifkan flag `Secure=true` pada Cookie |
+| `DEBUG_MODE` | `true` | Menampilkan tabel rute (`chi.Walk`) saat booting |
 | `ACCESS_TOKEN_SECRET` | *(string dev)* | Secret key penandatanganan JWT Access Token (min. 32 karakter) |
 | `REFRESH_TOKEN_SECRET` | *(string dev)* | Secret key penandatanganan JWT Refresh Token (min. 32 karakter) |
 | `CSRF_SECRET` | *(string dev)* | Secret key penandatanganan HMAC CSRF (min. 32 karakter) |
 | `ACCESS_TOKEN_TTL_MINUTES` | `15` | Masa berlaku access token (menit) |
 | `REFRESH_TOKEN_TTL_DAYS` | `7` | Masa berlaku refresh token (hari) |
+| `COOKIE_SECURE` | `false` | Nilai `true` mewajibkan pengiriman cookie hanya melalui HTTPS |
 | `COOKIE_DOMAIN` | `""` | Domain cookie (kosongkan untuk host saat ini) |
 
 ---
@@ -519,14 +532,31 @@ Aplikasi dapat dikonfigurasi melalui environment variables:
 ```bash
 go run cmd/api/main.go
 ```
-Output log:
-```
-================================================================
-🚀 Modular Monolith API Server berjalan di http://localhost:8080
-🔒 Mode Keamanan: development (Cookie Secure: false)
-📦 Modul Terpasang: [user], [auth], [security], [cookie]
-🛡️  Fitur: Dual-Secret JWT, RTR, HttpOnly, SameSite, HMAC CSRF
-================================================================
+Output log saat server booting:
+```text
+========================================================================
+🚀  ORCHID STARTER WEB API (go-chi/chi/v5)
+📡  Port Server : :8080
+🌐  Host Server : 0.0.0.0
+🔒  Environment : development
+🛠️   Debug Mode  : true
+📋  Total Routes: 12 Rute Terdaftar
+------------------------------------------------------------------------
+  DAFTAR ROUTER ENDPOINT:
+  [GET   ] /api/auth/csrf-token
+  [POST  ] /api/auth/login
+  [POST  ] /api/auth/logout
+  [POST  ] /api/auth/refresh
+  [POST  ] /api/auth/register
+  [PUT   ] /api/me
+  [GET   ] /api/me
+  [GET   ] /api/user/profile
+  [PUT   ] /api/user/profile
+  [GET   ] /api/users
+  [GET   ] /health
+  [GET   ] /health-check
+========================================================================
+💡 Debug Logger AKTIF: RequestID dan log HTTP request/response dicatat secara real-time.
 ```
 
 ### 2. Menjalankan Pengujian Otomatis
@@ -534,21 +564,19 @@ Output log:
 go test -v -count=1 ./...
 ```
 Hasil pengujian:
-```
+```text
 === RUN   TestCookieManager
 --- PASS: TestCookieManager (0.00s)
 === RUN   TestCSRFManager
 --- PASS: TestCSRFManager (0.00s)
-=== RUN   TestJWTManager_DualSecretIsolation
---- PASS: TestJWTManager_DualSecretIsolation (0.00s)
-=== RUN   TestJWTManager_Expiration
---- PASS: TestJWTManager_Expiration (0.00s)
+=== RUN   TestJWTManager_GenerateAndValidate
+--- PASS: TestJWTManager_GenerateAndValidate (0.00s)
 === RUN   TestEndToEndAuthFlow
---- PASS: TestEndToEndAuthFlow (0.09s)
+--- PASS: TestEndToEndAuthFlow (0.23s)
 PASS
 ok      github.com/yudhiana/web-api/pkg/cookie      0.003s
-ok      github.com/yudhiana/web-api/pkg/security    0.003s
-ok      github.com/yudhiana/web-api/tests           0.096s
+ok      github.com/yudhiana/web-api/security        0.003s
+ok      github.com/yudhiana/web-api/tests           0.232s
 ```
 
 ---
@@ -580,15 +608,16 @@ curl -i -c cookies.txt -X POST http://localhost:8080/api/auth/login \
 
 ### 3. Akses Data Terproteksi (GET)
 ```bash
-curl -i -b cookies.txt http://localhost:8080/api/user/profile
+curl -i -b cookies.txt http://localhost:8080/api/me
 ```
+*(Endpoint `/api/user/profile` juga tersedia sebagai alias kompatibel).*
 
 ### 4. Mutasi Data Terproteksi Auth & CSRF (PUT)
 Ambil nilai token CSRF dari `cookies.txt`:
 ```bash
 CSRF_VAL=$(grep "csrf_token" cookies.txt | awk '{print $7}')
 
-curl -i -b cookies.txt -X PUT http://localhost:8080/api/user/profile \
+curl -i -b cookies.txt -X PUT http://localhost:8080/api/me \
   -H "Content-Type: application/json" \
   -H "X-CSRF-Token: $CSRF_VAL" \
   -d '{"display_name": "Budi Santoso Terupdate"}'
