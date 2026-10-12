@@ -29,7 +29,7 @@ func (u *userUsecase) Register(ctx context.Context, req reqModel.CreateUserReque
 	}
 
 	role := req.Role
-	if role == "" {
+	if role != "admin" {
 		role = "user"
 	}
 

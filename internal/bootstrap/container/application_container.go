@@ -59,7 +59,7 @@ func NewApplicationContainer(cfg *config.LocalConfig) (*DirectInjection, error) 
 
 	// 4. Inisialisasi Usecases
 	uUsecase := userUsecase.NewUserUsecase(uRepo)
-	aUsecase := authUsecase.NewAuthUsecase(uUsecase, sRepo, jwtManager, csrfManager)
+	aUsecase := authUsecase.NewAuthUsecase(uUsecase, sRepo, jwtManager, csrfManager, cfg.AccessTokenTTL())
 
 	// Seed akun default untuk testing/development
 	seedDefaultUsers(uUsecase)

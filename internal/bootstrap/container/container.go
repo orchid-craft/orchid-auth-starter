@@ -35,8 +35,8 @@ func NewContainer() (*Container, error) {
 	}
 	logger.Info("Dependencies initialized successfully")
 
-	// 3. Initialize Chi router
-	app := server.GetChiApplication()
+	// 3. Initialize fresh Chi router (P2-1)
+	app := server.NewChiApplication()
 	if app == nil {
 		return nil, fmt.Errorf("failed to initialize chi application")
 	}

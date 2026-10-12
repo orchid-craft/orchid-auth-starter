@@ -16,19 +16,24 @@ type chiApplication struct {
 var chiAppInstance *chiApplication
 var onceApp sync.Once
 
+// NewChiApplication creates a fresh chi.Mux router with standard middlewares (P2-1)
+func NewChiApplication() *chi.Mux {
+	log := logos.NewLogger()
+	log.Info("Initialize chi application instance...")
+
+	app := chi.NewRouter()
+	app.Use(middleware.RequestID)
+	app.Use(middleware.Logger)
+	app.Use(middleware.Recoverer)
+	app.NotFound(httpUtil.NotFoundHandler)
+
+	return app
+}
+
 func GetChiApplication() *chi.Mux {
 	onceApp.Do(func() {
-		log := logos.NewLogger()
-		log.Info("Initialize chi application instance...")
-
-		app := chi.NewRouter()
-		app.Use(middleware.RequestID)
-		app.Use(middleware.Logger)
-		app.Use(middleware.Recoverer)
-		app.NotFound(httpUtil.NotFoundHandler)
-
 		chiAppInstance = &chiApplication{
-			app: app,
+			app: NewChiApplication(),
 		}
 	})
 

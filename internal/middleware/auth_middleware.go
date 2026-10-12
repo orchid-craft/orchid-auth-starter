@@ -55,3 +55,33 @@ func (m *AuthMiddleware) RequireAuth(next http.Handler) http.Handler {
 		next.ServeHTTP(w, r.WithContext(ctx))
 	})
 }
+
+// RequireRole membatasi akses hanya untuk pengguna dengan peran tertentu (RBAC)
+func (m *AuthMiddleware) RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
+	return func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+			claims, ok := security.GetClaimsContext(r.Context())
+			if !ok || claims == nil {
+				err := bunker.New(bunker.StatusUnAuthorized).SetMessage("autentikasi dibutuhkan: klaim pengguna tidak ditemukan")
+				httpUtil.ErrorResponse(w, err)
+				return
+			}
+
+			isAllowed := false
+			for _, role := range allowedRoles {
+				if claims.Role == role {
+					isAllowed = true
+					break
+				}
+			}
+
+			if !isAllowed {
+				err := bunker.New(bunker.StatusForbidden).SetMessage("akses ditolak: peran pengguna tidak memiliki izin yang cukup")
+				httpUtil.ErrorResponse(w, err)
+				return
+			}
+
+			next.ServeHTTP(w, r)
+		})
+	}
+}

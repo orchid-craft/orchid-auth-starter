@@ -19,10 +19,11 @@ import (
 )
 
 type authUsecase struct {
-	userUsecase userUsecase.UserUsecaseInterface
-	sessionRepo repository.SessionRepositoryInterface
-	jwtManager  *security.JWTManager
-	csrfManager *security.CSRFManager
+	userUsecase    userUsecase.UserUsecaseInterface
+	sessionRepo    repository.SessionRepositoryInterface
+	jwtManager     *security.JWTManager
+	csrfManager    *security.CSRFManager
+	accessTokenTTL time.Duration
 }
 
 func NewAuthUsecase(
@@ -30,21 +31,23 @@ func NewAuthUsecase(
 	sessionRepo repository.SessionRepositoryInterface,
 	jwtManager *security.JWTManager,
 	csrfManager *security.CSRFManager,
+	accessTokenTTL time.Duration,
 ) AuthUsecaseInterface {
 	return &authUsecase{
-		userUsecase: userUc,
-		sessionRepo: sessionRepo,
-		jwtManager:  jwtManager,
-		csrfManager: csrfManager,
+		userUsecase:    userUc,
+		sessionRepo:    sessionRepo,
+		jwtManager:     jwtManager,
+		csrfManager:    csrfManager,
+		accessTokenTTL: accessTokenTTL,
 	}
 }
 
 func (u *authUsecase) Register(ctx context.Context, req authReq.RegisterRequest) (*authRes.AuthResponse, error) {
-	// Register user via User Usecase
+	// Register user via User Usecase - paksa peran selalu 'user' untuk pendaftaran publik (P0-1)
 	_, err := u.userUsecase.Register(ctx, userReq.CreateUserRequest{
 		Email:       req.Email,
 		Password:    req.Password,
-		Role:        req.Role,
+		Role:        "user",
 		DisplayName: req.DisplayName,
 	})
 	if err != nil {
@@ -108,7 +111,7 @@ func (u *authUsecase) Login(ctx context.Context, req authReq.LoginRequest) (*aut
 		AccessToken:  accessToken,
 		RefreshToken: refreshToken,
 		CSRFToken:    csrfToken,
-		ExpiresIn:    15 * 60,
+		ExpiresIn:    int64(u.accessTokenTTL.Seconds()),
 		TokenType:    "Bearer",
 	}, nil
 }
@@ -186,7 +189,7 @@ func (u *authUsecase) RefreshToken(ctx context.Context, rawRefreshToken string) 
 		AccessToken:  newAccessToken,
 		RefreshToken: newRefreshToken,
 		CSRFToken:    newCSRFToken,
-		ExpiresIn:    15 * 60,
+		ExpiresIn:    int64(u.accessTokenTTL.Seconds()),
 		TokenType:    "Bearer",
 	}, nil
 }

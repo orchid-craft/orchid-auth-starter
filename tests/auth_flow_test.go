@@ -202,3 +202,153 @@ func TestEndToEndAuthFlow(t *testing.T) {
 		}
 	}
 }
+
+func TestRoleBasedAccessControl(t *testing.T) {
+	app := setupTestApp()
+
+	// 1. Login sebagai user biasa (Bob Member)
+	bobLoginPayload := `{"email":"bob@example.com","password":"password123"}`
+	bobReq := httptest.NewRequest("POST", "/api/auth/login", bytes.NewBufferString(bobLoginPayload))
+	bobReq.Header.Set("Content-Type", "application/json")
+	bobRec := httptest.NewRecorder()
+	app.ServeHTTP(bobRec, bobReq)
+
+	if bobRec.Code != http.StatusOK {
+		t.Fatalf("Login Bob gagal: %d, body: %s", bobRec.Code, bobRec.Body.String())
+	}
+
+	var bobAccessToken *http.Cookie
+	for _, c := range bobRec.Result().Cookies() {
+		if c.Name == cookie.AccessTokenCookieName {
+			bobAccessToken = c
+		}
+	}
+	if bobAccessToken == nil {
+		t.Fatal("Access token Bob tidak ditemukan")
+	}
+
+	// 2. Akses GET /api/users sebagai user biasa -> HARUS 403 Forbidden (P0-2)
+	listUsersReq := httptest.NewRequest("GET", "/api/users", nil)
+	listUsersReq.AddCookie(bobAccessToken)
+	listUsersRec := httptest.NewRecorder()
+	app.ServeHTTP(listUsersRec, listUsersReq)
+
+	if listUsersRec.Code != http.StatusForbidden {
+		t.Fatalf("Diharapkan 403 Forbidden untuk user biasa pada /api/users, didapat: %d, body: %s", listUsersRec.Code, listUsersRec.Body.String())
+	}
+
+	// 3. Login sebagai Admin (Alice Admin)
+	aliceLoginPayload := `{"email":"alice@example.com","password":"password123"}`
+	aliceReq := httptest.NewRequest("POST", "/api/auth/login", bytes.NewBufferString(aliceLoginPayload))
+	aliceReq.Header.Set("Content-Type", "application/json")
+	aliceRec := httptest.NewRecorder()
+	app.ServeHTTP(aliceRec, aliceReq)
+
+	if aliceRec.Code != http.StatusOK {
+		t.Fatalf("Login Alice gagal: %d, body: %s", aliceRec.Code, aliceRec.Body.String())
+	}
+
+	var aliceAccessToken *http.Cookie
+	for _, c := range aliceRec.Result().Cookies() {
+		if c.Name == cookie.AccessTokenCookieName {
+			aliceAccessToken = c
+		}
+	}
+	if aliceAccessToken == nil {
+		t.Fatal("Access token Alice tidak ditemukan")
+	}
+
+	// 4. Akses GET /api/users sebagai Admin -> HARUS 200 OK
+	adminListUsersReq := httptest.NewRequest("GET", "/api/users", nil)
+	adminListUsersReq.AddCookie(aliceAccessToken)
+	adminListUsersRec := httptest.NewRecorder()
+	app.ServeHTTP(adminListUsersRec, adminListUsersReq)
+
+	if adminListUsersRec.Code != http.StatusOK {
+		t.Fatalf("Diharapkan 200 OK untuk admin pada /api/users, didapat: %d, body: %s", adminListUsersRec.Code, adminListUsersRec.Body.String())
+	}
+}
+
+func TestInputValidationAndConflict(t *testing.T) {
+	app := setupTestApp()
+
+	// 1. Password terlalu pendek (< 8 karakter) -> 400 Bad Request (P0-3)
+	shortPassPayload := `{"email":"test1@example.com","password":"short","display_name":"Test User"}`
+	req1 := httptest.NewRequest("POST", "/api/auth/register", bytes.NewBufferString(shortPassPayload))
+	req1.Header.Set("Content-Type", "application/json")
+	rec1 := httptest.NewRecorder()
+	app.ServeHTTP(rec1, req1)
+
+	if rec1.Code != http.StatusBadRequest {
+		t.Fatalf("Diharapkan 400 Bad Request untuk password pendek, didapat: %d, body: %s", rec1.Code, rec1.Body.String())
+	}
+
+	// 2. Format email tidak valid -> 400 Bad Request (P0-3)
+	badEmailPayload := `{"email":"not-an-email","password":"password123","display_name":"Test User"}`
+	req2 := httptest.NewRequest("POST", "/api/auth/register", bytes.NewBufferString(badEmailPayload))
+	req2.Header.Set("Content-Type", "application/json")
+	rec2 := httptest.NewRecorder()
+	app.ServeHTTP(rec2, req2)
+
+	if rec2.Code != http.StatusBadRequest {
+		t.Fatalf("Diharapkan 400 Bad Request untuk email tidak valid, didapat: %d, body: %s", rec2.Code, rec2.Body.String())
+	}
+
+	// 3. Registrasi valid
+	validPayload := `{"email":"charlie@example.com","password":"password123","display_name":"Charlie","role":"admin"}`
+	req3 := httptest.NewRequest("POST", "/api/auth/register", bytes.NewBufferString(validPayload))
+	req3.Header.Set("Content-Type", "application/json")
+	rec3 := httptest.NewRecorder()
+	app.ServeHTTP(rec3, req3)
+
+	if rec3.Code != http.StatusOK {
+		t.Fatalf("Registrasi valid gagal: %d, body: %s", rec3.Code, rec3.Body.String())
+	}
+
+	// Verifikasi P0-1: Meskipun payload mencoba role "admin", hasil registrasi tetap "user"
+	if !bytes.Contains(rec3.Body.Bytes(), []byte(`"role":"user"`)) {
+		t.Fatalf("Pencegahan Privilege Escalation gagal: role pengguna publik harus 'user', body: %s", rec3.Body.String())
+	}
+
+	// 4. Registrasi ulang email yang sama -> HARUS 409 Conflict (P2-3)
+	req4 := httptest.NewRequest("POST", "/api/auth/register", bytes.NewBufferString(validPayload))
+	req4.Header.Set("Content-Type", "application/json")
+	rec4 := httptest.NewRecorder()
+	app.ServeHTTP(rec4, req4)
+
+	if rec4.Code != http.StatusConflict {
+		t.Fatalf("Diharapkan 409 Conflict untuk email yang sudah terdaftar, didapat: %d, body: %s", rec4.Code, rec4.Body.String())
+	}
+}
+
+func TestStrictCookieRefresh(t *testing.T) {
+	app := setupTestApp()
+
+	// 1. Dapatkan CSRF token awal
+	csrfReq := httptest.NewRequest("GET", "/api/auth/csrf-token", nil)
+	csrfRec := httptest.NewRecorder()
+	app.ServeHTTP(csrfRec, csrfReq)
+
+	var csrfCookie *http.Cookie
+	for _, c := range csrfRec.Result().Cookies() {
+		if c.Name == cookie.CSRFCookieName {
+			csrfCookie = c
+		}
+	}
+	if csrfCookie == nil {
+		t.Fatal("CSRF cookie tidak ditemukan")
+	}
+
+	// 2. Coba refresh token hanya lewat JSON body tanpa Cookie -> HARUS 401 Unauthorized (P1-1)
+	fallbackBody := `{"refresh_token":"some-token-string"}`
+	req := httptest.NewRequest("POST", "/api/auth/refresh", bytes.NewBufferString(fallbackBody))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-CSRF-Token", csrfCookie.Value)
+	req.AddCookie(csrfCookie)
+	rec := httptest.NewRecorder()
+	app.ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusUnauthorized {
+		t.Fatalf("Diharapkan 401 Unauthorized saat refresh token tidak ada di cookie, didapat: %d, body: %s", rec.Code, rec.Body.String())
+	}
+}
