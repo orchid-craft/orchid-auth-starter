@@ -1,0 +1,22 @@
+# Cursor Rules for web-api
+
+## Critical Directives
+- DO NOT run `git commit` or `git push` without explicit user confirmation.
+- Always run `go vet ./...` and `go test -count=1 ./...` after modifying Go code.
+- Follow Orchid Starter Clean Architecture conventions (refer to AGENTS.md).
+
+## Technology Stack
+- Language: Go 1.24+
+- Web Framework: github.com/go-chi/chi/v5
+- Logger: github.com/olympus-forge/logos
+- Errors: github.com/olympus-forge/bunker
+- Token / Auth: Dual-Secret JWT + Refresh Token Rotation (RTR)
+- CSRF Protection: Double Submit Cookie with HMAC-SHA256 signature
+- Cookie: HttpOnly SameSite=Strict/Lax abstractions in pkg/cookie
+
+## Code Structure
+- Entrypoint: cmd/api/main.go
+- Dependency Injection: internal/bootstrap/container
+- HTTP Server: internal/bootstrap/server/restful_server
+- Modularity: modules/<module_name>/{delivery,usecase,repository,domain}
+- No HTTP imports inside usecase or domain packages.

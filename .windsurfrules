@@ -1,0 +1,13 @@
+# Windsurf Cascade Rules
+
+Refer to AGENTS.md for architecture and domain guidelines.
+
+## Safety Rules
+- Do NOT commit or push to Git without explicit developer permission.
+- Always verify code with `go vet ./...` and `go test -count=1 ./...`.
+
+## Architecture Rules
+- Use go-chi/chi/v5 router.
+- Clean Architecture per module: delivery -> usecase -> repository -> domain.
+- Do not couple usecases to HTTP or SQL drivers directly; rely on interfaces.
+- Use logos logger and bunker errors.
