@@ -1,6 +1,13 @@
 # Web API - Modular Monolith Authentication & CSRF Protection
 
-Implementasi backend API RESTful menggunakan **Golang** dengan arsitektur **Modular Monolith**, menerapkan standar keamanan industri untuk:
+[![Template: Orchid Starter](https://img.shields.io/badge/Template-orchid--starter-6366f1?style=flat-square&logo=github&logoColor=white)](https://github.com/orchid-craft/orchid-starter)
+[![Router: Chi](https://img.shields.io/badge/Router-go--chi%2Fchi%2Fv5-00ADD8?style=flat-square&logo=go&logoColor=white)](https://github.com/go-chi/chi)
+[![Go Version](https://img.shields.io/badge/Go-1.27-00ADD8?style=flat-square&logo=go&logoColor=white)](https://go.dev)
+
+> 🏛️ **Architecture Foundation:**  
+> Proyek ini dibangun berdasarkan template arsitektur [**orchid-craft/orchid-starter**](https://github.com/orchid-craft/orchid-starter) (Clean Architecture + Dependency Injection Bootstrap Container).
+
+Implementasi backend API RESTful menggunakan **Golang** dengan arsitektur **Modular Monolith & Clean Architecture**, menerapkan standar keamanan industri untuk:
 1. **Access Token & Refresh Token** dengan **Secret Token terpisah** (*Dual-Secret Isolation*).
 2. **Refresh Token Rotation (RTR)** dan deteksi serangan penggunaan ulang (**Reuse Attack Detection** / RFC 6819).
 3. **Cookie Keamanan Tinggi** (`HttpOnly`, `SameSite=Strict/Lax`, `Secure`, `Path isolation`).
@@ -10,7 +17,7 @@ Implementasi backend API RESTful menggunakan **Golang** dengan arsitektur **Modu
 
 ## 📑 Daftar Isi
 
-- [Arsitektur: Modular Monolith](#-arsitektur-modular-monolith)
+- [Arsitektur: Orchid Starter Clean Architecture](#-arsitektur-clean-architecture--modular-orchid-starter-pattern)
 - [Konsep & Spesifikasi Keamanan](#-konsep--spesifikasi-keamanan)
   - [1. Secret Token Terpisah (Dual-Secret & CSRF-Secret)](#1-secret-token-terpisah-dual-secret--csrf-secret)
   - [2. Spesifikasi Cookie Keamanan Tinggi](#2-spesifikasi-cookie-keamanan-tinggi)
