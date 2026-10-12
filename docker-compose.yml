@@ -1,0 +1,15 @@
+services:
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: web-api
+    ports:
+      - "8080:8080"
+    environment:
+      - APP_ENV=production
+      - APP_PORT=8080
+      - ACCESS_TOKEN_SECRET=super-secret-access-token-key-change-in-production-min-32-chars!prod
+      - REFRESH_TOKEN_SECRET=super-secret-refresh-token-key-change-in-production-min-32-chars!prod
+      - CSRF_SECRET=super-secret-csrf-key-change-in-production-min-32-chars!prod
+    restart: unless-stopped
