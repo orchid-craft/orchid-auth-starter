@@ -4,14 +4,20 @@ import (
 	"context"
 	"net/http"
 
+	chiMiddleware "github.com/go-chi/chi/v5/middleware"
+	"github.com/olympus-forge/logos"
 	"github.com/yudhiana/web-api/constants"
 	modelCommon "github.com/yudhiana/web-api/internal/common/model"
 )
 
 // ExtractRequestContext extracts common headers from http.Request and creates RequestContext
 func ExtractRequestContext(r *http.Request) *modelCommon.RequestContext {
+	reqID := r.Header.Get(constants.HeaderRequestID)
+	if reqID == "" {
+		reqID = chiMiddleware.GetReqID(r.Context())
+	}
 	return &modelCommon.RequestContext{
-		RequestID: r.Header.Get(constants.HeaderRequestID),
+		RequestID: reqID,
 	}
 }
 
@@ -26,4 +32,20 @@ func GetRequestIDFromContext(ctx context.Context) string {
 		return reqCtx.RequestID
 	}
 	return ""
+}
+
+// LogInfoWithContext menulis log INFO dengan menyertakan request_id dari context jika ada (P2-4)
+func LogInfoWithContext(ctx context.Context, logger *logos.LogEntry, msg string, args ...any) {
+	if reqID := GetRequestIDFromContext(ctx); reqID != "" {
+		args = append(args, "request_id", reqID)
+	}
+	logger.Info(msg, args...)
+}
+
+// LogErrorWithContext menulis log ERROR dengan menyertakan request_id dari context jika ada (P2-4)
+func LogErrorWithContext(ctx context.Context, logger *logos.LogEntry, msg string, args ...any) {
+	if reqID := GetRequestIDFromContext(ctx); reqID != "" {
+		args = append(args, "request_id", reqID)
+	}
+	logger.Error(msg, args...)
 }

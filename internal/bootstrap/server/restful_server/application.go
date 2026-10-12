@@ -26,6 +26,7 @@ func SetupAuthRoutes(app *chi.Mux, container *container.Container) {
 			di.CookieManager,
 			di.CSRFManager,
 			di.CSRFMiddleware,
+			di.RateLimitMiddleware,
 		)
 	})
 }

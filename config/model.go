@@ -18,6 +18,14 @@ type LocalConfig struct {
 	RefreshTokenTTLDays    int    `env:"REFRESH_TOKEN_TTL_DAYS" envDefault:"7"`
 	CookieSecure           bool   `env:"COOKIE_SECURE" envDefault:"false"`
 	CookieDomain           string `env:"COOKIE_DOMAIN" envDefault:""`
+
+	// Rate Limiting Configurations (P1-3)
+	RateLimitAuthRequests      int `env:"RATE_LIMIT_AUTH_REQUESTS" envDefault:"10"`
+	RateLimitAuthWindowMinutes int `env:"RATE_LIMIT_AUTH_WINDOW_MINUTES" envDefault:"1"`
+}
+
+func (c *LocalConfig) RateLimitAuthWindow() time.Duration {
+	return time.Duration(c.RateLimitAuthWindowMinutes) * time.Minute
 }
 
 func (c *LocalConfig) AccessTokenTTL() time.Duration {

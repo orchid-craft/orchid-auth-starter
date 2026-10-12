@@ -16,15 +16,16 @@ import (
 )
 
 type DirectInjection struct {
-	UserRepo       userRepo.UserRepositoryInterface
-	SessionRepo    authRepo.SessionRepositoryInterface
-	UserUsecase    userUsecase.UserUsecaseInterface
-	AuthUsecase    authUsecase.AuthUsecaseInterface
-	JWTManager     *security.JWTManager
-	CSRFManager    *security.CSRFManager
-	CookieManager  *cookie.Manager
-	AuthMiddleware *middleware.AuthMiddleware
-	CSRFMiddleware *middleware.CSRFMiddleware
+	UserRepo            userRepo.UserRepositoryInterface
+	SessionRepo         authRepo.SessionRepositoryInterface
+	UserUsecase         userUsecase.UserUsecaseInterface
+	AuthUsecase         authUsecase.AuthUsecaseInterface
+	JWTManager          *security.JWTManager
+	CSRFManager         *security.CSRFManager
+	CookieManager       *cookie.Manager
+	AuthMiddleware      *middleware.AuthMiddleware
+	CSRFMiddleware      *middleware.CSRFMiddleware
+	RateLimitMiddleware *middleware.RateLimiterMiddleware
 }
 
 func NewApplicationContainer(cfg *config.LocalConfig) (*DirectInjection, error) {
@@ -52,6 +53,7 @@ func NewApplicationContainer(cfg *config.LocalConfig) (*DirectInjection, error) 
 	// 2. Inisialisasi Middlewares
 	authMiddleware := middleware.NewAuthMiddleware(jwtManager)
 	csrfMiddleware := middleware.NewCSRFMiddleware(csrfManager)
+	rateLimitMiddleware := middleware.NewRateLimiterMiddleware(cfg.RateLimitAuthRequests, cfg.RateLimitAuthWindow())
 
 	// 3. Inisialisasi Repositories (In-Memory atau Database)
 	uRepo := userRepo.NewUserRepository()
@@ -65,15 +67,16 @@ func NewApplicationContainer(cfg *config.LocalConfig) (*DirectInjection, error) 
 	seedDefaultUsers(uUsecase)
 
 	di := &DirectInjection{
-		UserRepo:       uRepo,
-		SessionRepo:    sRepo,
-		UserUsecase:    uUsecase,
-		AuthUsecase:    aUsecase,
-		JWTManager:     jwtManager,
-		CSRFManager:    csrfManager,
-		CookieManager:  cookieManager,
-		AuthMiddleware: authMiddleware,
-		CSRFMiddleware: csrfMiddleware,
+		UserRepo:            uRepo,
+		SessionRepo:         sRepo,
+		UserUsecase:         uUsecase,
+		AuthUsecase:         aUsecase,
+		JWTManager:          jwtManager,
+		CSRFManager:         csrfManager,
+		CookieManager:       cookieManager,
+		AuthMiddleware:      authMiddleware,
+		CSRFMiddleware:      csrfMiddleware,
+		RateLimitMiddleware: rateLimitMiddleware,
 	}
 
 	logger.Info("Dependency injection container initialized successfully")
@@ -99,5 +102,8 @@ func seedDefaultUsers(u userUsecase.UserUsecaseInterface) {
 func (di *DirectInjection) Close() error {
 	logger := logos.NewLogger()
 	logger.Info("🔴Closing dependency injection resources...")
+	if di.RateLimitMiddleware != nil {
+		di.RateLimitMiddleware.Close()
+	}
 	return nil
 }

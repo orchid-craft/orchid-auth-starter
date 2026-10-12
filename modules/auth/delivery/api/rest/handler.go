@@ -15,6 +15,7 @@ func NewAuthHandler(
 	cm *cookie.Manager,
 	csrfManager *security.CSRFManager,
 	csrfMiddleware *middleware.CSRFMiddleware,
+	rateLimitMiddleware *middleware.RateLimiterMiddleware,
 ) {
 	h := v1.NewAuthHandler(u, cm, csrfManager)
 
@@ -22,12 +23,25 @@ func NewAuthHandler(
 		// Public auth endpoints
 		authRouter.Get("/csrf-token", h.CSRFToken)
 		authRouter.Post("/register", h.Register)
-		authRouter.Post("/login", h.Login)
+
+		// Login dengan perlindungan rate-limit anti brute-force (P1-3)
+		if rateLimitMiddleware != nil {
+			authRouter.With(rateLimitMiddleware.Limit).Post("/login", h.Login)
+		} else {
+			authRouter.Post("/login", h.Login)
+		}
 
 		// Endpoints protected by CSRF validation
 		authRouter.Group(func(protected chi.Router) {
 			protected.Use(csrfMiddleware.Protect)
-			protected.Post("/refresh", h.RefreshToken)
+
+			// Refresh dengan perlindungan rate-limit (P1-3)
+			if rateLimitMiddleware != nil {
+				protected.With(rateLimitMiddleware.Limit).Post("/refresh", h.RefreshToken)
+			} else {
+				protected.Post("/refresh", h.RefreshToken)
+			}
+
 			protected.Post("/logout", h.Logout)
 		})
 	})

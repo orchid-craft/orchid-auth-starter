@@ -352,3 +352,70 @@ func TestStrictCookieRefresh(t *testing.T) {
 		t.Fatalf("Diharapkan 401 Unauthorized saat refresh token tidak ada di cookie, didapat: %d, body: %s", rec.Code, rec.Body.String())
 	}
 }
+
+func TestLoginRateLimit(t *testing.T) {
+	app := setupTestApp()
+
+	// Default konfigurasi rate limit adalah 10 request per window (P1-3)
+	payload := `{"email":"bob@example.com","password":"password123"}`
+	for i := 1; i <= 10; i++ {
+		req := httptest.NewRequest("POST", "/api/auth/login", bytes.NewBufferString(payload))
+		req.Header.Set("Content-Type", "application/json")
+		req.RemoteAddr = "198.51.100.1:12345"
+		rec := httptest.NewRecorder()
+		app.ServeHTTP(rec, req)
+
+		if rec.Code == http.StatusTooManyRequests {
+			t.Fatalf("Request ke-%d tidak seharusnya kena rate limit 429", i)
+		}
+	}
+
+	// Request ke-11 dari IP yang sama -> HARUS 429 Too Many Requests (P1-3)
+	req11 := httptest.NewRequest("POST", "/api/auth/login", bytes.NewBufferString(payload))
+	req11.Header.Set("Content-Type", "application/json")
+	req11.RemoteAddr = "198.51.100.1:12345"
+	rec11 := httptest.NewRecorder()
+	app.ServeHTTP(rec11, req11)
+
+	if rec11.Code != http.StatusTooManyRequests {
+		t.Fatalf("Diharapkan 429 Too Many Requests pada request ke-11, didapat: %d, body: %s", rec11.Code, rec11.Body.String())
+	}
+
+	if rec11.Header().Get("Retry-After") == "" {
+		t.Errorf("Header Retry-After harus disertakan pada respons 429")
+	}
+
+	// Request dari IP berbeda -> TIDAK terpengaruh limit IP pertama
+	reqOtherIP := httptest.NewRequest("POST", "/api/auth/login", bytes.NewBufferString(payload))
+	reqOtherIP.Header.Set("Content-Type", "application/json")
+	reqOtherIP.RemoteAddr = "203.0.113.5:54321"
+	recOtherIP := httptest.NewRecorder()
+	app.ServeHTTP(recOtherIP, reqOtherIP)
+
+	if recOtherIP.Code == http.StatusTooManyRequests {
+		t.Fatalf("IP berbeda tidak boleh terkena rate limit dari IP pertama")
+	}
+}
+
+func TestRequestIDContextPropagation(t *testing.T) {
+	c, err := container.NewContainer()
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer c.Close()
+	restfulServer.NewServer(c)
+
+	req := httptest.NewRequest("GET", "/health", nil)
+	req.Header.Set("X-Request-Id", "custom-req-id-12345")
+	rec := httptest.NewRecorder()
+	c.GetApp().ServeHTTP(rec, req)
+
+	if rec.Code != http.StatusOK {
+		t.Fatalf("Health check gagal: %d", rec.Code)
+	}
+
+	// Periksa header response X-Request-Id dari chi middleware
+	if rec.Header().Get("X-Request-Id") != "custom-req-id-12345" {
+		t.Errorf("Header X-Request-Id tidak dipropagasi kembali, didapat: %s", rec.Header().Get("X-Request-Id"))
+	}
+}

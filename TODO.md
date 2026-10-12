@@ -9,10 +9,10 @@ File ini hanya berisi yang **belum** + catatan kecil. Centang `[x]` jika selesai
 
 ## P1 — Penting (kerjakan dulu)
 
-- [ ] **P1-3 Rate-limit login & refresh (anti brute-force)**
-  - Lokasi: `POST /api/auth/login`, `POST /api/auth/refresh`, `internal/bootstrap/server/chi_server.go`
-  - Usulan: chi `throttle` atau `golang.org/x/time/rate` per IP + per email, mis. 10 req/menit login, lockout sementara + log gagal.
-  - Done jika: login ke-11 dalam 1 menit → 429, test baru `TestLoginRateLimit` PASS.
+- [x] **P1-3 Rate-limit login & refresh (anti brute-force)** (DONE)
+  - Lokasi: `POST /api/auth/login`, `POST /api/auth/refresh`, `internal/middleware/rate_limit_middleware.go`
+  - Implementasi: sliding window per IP, membatasi request per window waktu (default 10 req/menit), response 429 Too Many Requests + header `Retry-After`.
+  - Test: `TestLoginRateLimit` PASS.
 
 - [ ] **P1-5 Ganti in-memory ke Postgres + GC session**
   - Lokasi: `modules/auth/repository/session_repository.go`, `modules/user/repository/user_repository.go`, ERD di `README.md`
@@ -26,27 +26,21 @@ File ini hanya berisi yang **belum** + catatan kecil. Centang `[x]` jika selesai
   - Usulan: denylist JTI singkat di Redis/memory sampai `exp` (window 15 mnt), atau perkecil TTL ke 5 mnt.
   - Done jika: token lama ditolak setelah logout dalam window TTL.
 
-- [ ] **P2-4 Propagasi RequestID ke log/usecase**
-  - Lokasi: `internal/bootstrap/server/chi_server.go`, `internal/common/request_context.go`, `internal/middleware/`
-  - Usulan: suntik `X-Request-Id` chi ke `context.Context`, pakai di semua `logger.Info` + usecase.
-  - Done jika: tiap baris log request memuat `request_id` yang sama dari middleware → handler.
+- [x] **P2-4 Propagasi RequestID ke log/usecase** (DONE)
+  - Lokasi: `internal/bootstrap/server/chi_server.go`, `internal/common/request_context.go`
+  - Implementasi: Chi `middleware.RequestID` disuntikkan ke `context.Context` via `modelCommon.SetRequestContext`, disematkan ke header respons `X-Request-Id`, dan tersedia helper `LogInfoWithContext` / `LogErrorWithContext`.
+  - Test: `TestRequestIDContextPropagation` PASS.
 
-- [ ] **P2-5 Dockerfile + CI**
-  - Lokasi: root, `.github/`
-  - Usulan: `Dockerfile` multi-stage, `docker-compose.yml` (api + postgres), workflow `vet + test` tiap push.
-  - Done jika: `docker build` sukses, CI hijau.
+- [x] **P2-5 Dockerfile + CI** (DONE)
+  - Lokasi: `Dockerfile`, `docker-compose.yml`, `.github/workflows/ci.yml`
+  - Implementasi: Multi-stage Dockerfile berbasis alpine minimal, docker-compose untuk service deployment, dan GitHub Actions CI untuk otomatisasi `go vet` dan `go test`.
 
 ---
 
 ## Minor — Cepat, dampak rapi
 
-- [ ] **go mod tidy (validator direct)**
-  - `validator/v10` masih `// indirect` di `go.mod` padahal dipakai langsung di `pkg/validator/`.
-  - Jalankan: `go mod tidy && go vet ./...`
-
-- [ ] **git add file baru (efek fix .gitignore `api` → `/api`)**
-  - Masih `??`: `cmd/`, `modules/auth/delivery/api/`, `modules/user/delivery/api/`, `pkg/validator/`, `REVIEW.md`, file ini.
-  - Jalankan: `git add cmd modules/auth/delivery/api modules/user/delivery/api pkg/validator REVIEW.md TODO.md .gitignore config/config.go go.mod go.sum internal/ modules/auth/usecase modules/user/usecase tests/` lalu review `git status` sebelum commit (jangan commit/push tanpa izin eksplisit).
+- [x] **go mod tidy (validator direct)** (DONE)
+- [x] **git add file baru (efek fix .gitignore `api` → `/api`)** (DONE)
 
 ---
 
@@ -57,7 +51,10 @@ File ini hanya berisi yang **belum** + catatan kecil. Centang `[x]` jika selesai
 - [x] P0-3 validator `email/min/max` di Register/Login/Update
 - [x] P1-1 refresh cookie-only (hapus fallback body)
 - [x] P1-2 `ExpiresIn` dari config TTL
+- [x] P1-3 Rate-limit login & refresh anti brute-force
 - [x] P1-4 validasi secret min.32 di production
 - [x] P2-1 `NewChiApplication()` fresh per container
 - [x] P2-3 `409 Conflict` untuk email duplikat
+- [x] P2-4 Propagasi RequestID ke context & logger
+- [x] P2-5 Dockerfile multi-stage, docker-compose & GitHub Actions CI
 - [x] Fix `.gitignore` `api` → `/api`
