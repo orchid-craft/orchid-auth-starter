@@ -5,29 +5,23 @@ import (
 	"sync"
 
 	"github.com/yudhiana/web-api/modules/user/domain"
+	userModel "github.com/yudhiana/web-api/modules/user/domain/models"
 )
-
-type UserRepository interface {
-	Create(ctx context.Context, user *domain.User) error
-	FindByEmail(ctx context.Context, email string) (*domain.User, error)
-	FindByID(ctx context.Context, id string) (*domain.User, error)
-	Update(ctx context.Context, user *domain.User) error
-}
 
 type memoryUserRepository struct {
 	mu      sync.RWMutex
-	users   map[string]*domain.User
+	users   map[string]*userModel.User
 	byEmail map[string]string
 }
 
-func NewMemoryUserRepository() UserRepository {
+func NewUserRepository() UserRepositoryInterface {
 	return &memoryUserRepository{
-		users:   make(map[string]*domain.User),
+		users:   make(map[string]*userModel.User),
 		byEmail: make(map[string]string),
 	}
 }
 
-func (r *memoryUserRepository) Create(ctx context.Context, user *domain.User) error {
+func (r *memoryUserRepository) Create(ctx context.Context, user *userModel.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -40,7 +34,7 @@ func (r *memoryUserRepository) Create(ctx context.Context, user *domain.User) er
 	return nil
 }
 
-func (r *memoryUserRepository) FindByEmail(ctx context.Context, email string) (*domain.User, error) {
+func (r *memoryUserRepository) FindByEmail(ctx context.Context, email string) (*userModel.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -56,7 +50,7 @@ func (r *memoryUserRepository) FindByEmail(ctx context.Context, email string) (*
 	return user, nil
 }
 
-func (r *memoryUserRepository) FindByID(ctx context.Context, id string) (*domain.User, error) {
+func (r *memoryUserRepository) FindByID(ctx context.Context, id string) (*userModel.User, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 
@@ -67,7 +61,7 @@ func (r *memoryUserRepository) FindByID(ctx context.Context, id string) (*domain
 	return user, nil
 }
 
-func (r *memoryUserRepository) Update(ctx context.Context, user *domain.User) error {
+func (r *memoryUserRepository) Update(ctx context.Context, user *userModel.User) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -77,4 +71,29 @@ func (r *memoryUserRepository) Update(ctx context.Context, user *domain.User) er
 
 	r.users[user.ID] = user
 	return nil
+}
+
+func (r *memoryUserRepository) Delete(ctx context.Context, id string) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	user, exists := r.users[id]
+	if !exists {
+		return domain.ErrUserNotFound
+	}
+
+	delete(r.byEmail, user.Email)
+	delete(r.users, id)
+	return nil
+}
+
+func (r *memoryUserRepository) List(ctx context.Context) ([]*userModel.User, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	list := make([]*userModel.User, 0, len(r.users))
+	for _, u := range r.users {
+		list = append(list, u)
+	}
+	return list, nil
 }

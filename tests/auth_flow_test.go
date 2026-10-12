@@ -5,50 +5,20 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"testing"
-	"time"
 
-	"github.com/yudhiana/web-api/config"
-	"github.com/yudhiana/web-api/modules/auth"
-	"github.com/yudhiana/web-api/modules/user"
+	"github.com/yudhiana/web-api/internal/bootstrap/container"
+	restfulServer "github.com/yudhiana/web-api/internal/bootstrap/server/restful_server"
 	"github.com/yudhiana/web-api/pkg/cookie"
-	"github.com/yudhiana/web-api/pkg/security"
 )
 
 func setupTestApp() http.Handler {
-	cfg := &config.Config{
-		AccessTokenSecret:  "test-super-secret-access-token-key-32-chars!",
-		RefreshTokenSecret: "test-super-secret-refresh-token-key-32-chars!",
-		CSRFSecret:         "test-super-secret-csrf-token-key-32-chars!",
-		AccessTokenTTL:     15 * time.Minute,
-		RefreshTokenTTL:    7 * 24 * time.Hour,
-		CookieSecure:       false,
-		CookieDomain:       "",
+	c, err := container.NewContainer()
+	if err != nil {
+		panic(err)
 	}
 
-	cookieMgr := cookie.NewManager(cookie.Config{
-		Secure:          cfg.CookieSecure,
-		Domain:          cfg.CookieDomain,
-		AccessTokenTTL:  cfg.AccessTokenTTL,
-		RefreshTokenTTL: cfg.RefreshTokenTTL,
-	})
-
-	jwtMgr := security.NewJWTManager(security.JWTConfig{
-		AccessTokenSecret:  cfg.AccessTokenSecret,
-		RefreshTokenSecret: cfg.RefreshTokenSecret,
-		AccessTokenTTL:     cfg.AccessTokenTTL,
-		RefreshTokenTTL:    cfg.RefreshTokenTTL,
-	})
-
-	csrfMgr := security.NewCSRFManager(cfg.CSRFSecret)
-
-	userMod := user.NewModule()
-	authMod := auth.NewModule(cfg, userMod.Service, cookieMgr, jwtMgr, csrfMgr)
-
-	mux := http.NewServeMux()
-	authMod.RegisterRoutes(mux)
-	userMod.RegisterRoutes(mux, authMod.AuthMiddleware.RequireAuth)
-
-	return authMod.CSRFMiddleware.Protect(mux)
+	restfulServer.NewServer(c)
+	return c.GetApp()
 }
 
 func TestEndToEndAuthFlow(t *testing.T) {
@@ -61,7 +31,7 @@ func TestEndToEndAuthFlow(t *testing.T) {
 	regRec := httptest.NewRecorder()
 	app.ServeHTTP(regRec, regReq)
 
-	if regRec.Code != http.StatusCreated {
+	if regRec.Code != http.StatusOK {
 		t.Fatalf("Registrasi gagal, status: %d, body: %s", regRec.Code, regRec.Body.String())
 	}
 
@@ -120,8 +90,8 @@ func TestEndToEndAuthFlow(t *testing.T) {
 		t.Errorf("csrf_token HARUS HttpOnly=false agar dapat dibaca oleh script Frontend (Double Submit)")
 	}
 
-	// 3. Akses Protected Endpoint (GET /api/user/profile) dengan Access Token Cookie
-	profileReq := httptest.NewRequest("GET", "/api/user/profile", nil)
+	// 3. Akses Protected Endpoint (GET /api/me) dengan Access Token Cookie
+	profileReq := httptest.NewRequest("GET", "/api/me", nil)
 	profileReq.AddCookie(accessTokenCookie)
 	profileRec := httptest.NewRecorder()
 	app.ServeHTTP(profileRec, profileReq)
@@ -130,9 +100,9 @@ func TestEndToEndAuthFlow(t *testing.T) {
 		t.Fatalf("Gagal mengakses protected profile, status: %d, body: %s", profileRec.Code, profileRec.Body.String())
 	}
 
-	// 4. Test Proteksi CSRF pada Mutasi Data (PUT /api/user/profile)
+	// 4. Test Proteksi CSRF pada Mutasi Data (PUT /api/me)
 	// Skenario 4a: Tanpa header X-CSRF-Token -> HARUS DITOLAK (Status 403 Forbidden)
-	putReqWithoutCSRF := httptest.NewRequest("PUT", "/api/user/profile", bytes.NewBufferString(`{"display_name":"Budi Update"}`))
+	putReqWithoutCSRF := httptest.NewRequest("PUT", "/api/me", bytes.NewBufferString(`{"display_name":"Budi Update"}`))
 	putReqWithoutCSRF.Header.Set("Content-Type", "application/json")
 	putReqWithoutCSRF.AddCookie(accessTokenCookie)
 	putReqWithoutCSRF.AddCookie(csrfTokenCookie)
@@ -140,11 +110,11 @@ func TestEndToEndAuthFlow(t *testing.T) {
 	app.ServeHTTP(putRecWithoutCSRF, putReqWithoutCSRF)
 
 	if putRecWithoutCSRF.Code != http.StatusForbidden {
-		t.Fatalf("Diharapkan 403 Forbidden ketika X-CSRF-Token absen, tapi didapat: %d", putRecWithoutCSRF.Code)
+		t.Fatalf("Diharapkan 403 Forbidden ketika X-CSRF-Token absen, tapi didapat: %d, body: %s", putRecWithoutCSRF.Code, putRecWithoutCSRF.Body.String())
 	}
 
 	// Skenario 4b: Dengan X-CSRF-Token yang salah/palsu -> HARUS DITOLAK (Status 403 Forbidden)
-	putReqFakeCSRF := httptest.NewRequest("PUT", "/api/user/profile", bytes.NewBufferString(`{"display_name":"Budi Update"}`))
+	putReqFakeCSRF := httptest.NewRequest("PUT", "/api/me", bytes.NewBufferString(`{"display_name":"Budi Update"}`))
 	putReqFakeCSRF.Header.Set("Content-Type", "application/json")
 	putReqFakeCSRF.Header.Set("X-CSRF-Token", "fake-tampered-token")
 	putReqFakeCSRF.AddCookie(accessTokenCookie)
@@ -157,7 +127,7 @@ func TestEndToEndAuthFlow(t *testing.T) {
 	}
 
 	// Skenario 4c: Dengan X-CSRF-Token yang valid sesuai cookie -> HARUS SUKSES (Status 200 OK)
-	putReqValid := httptest.NewRequest("PUT", "/api/user/profile", bytes.NewBufferString(`{"display_name":"Budi Santoso Baru"}`))
+	putReqValid := httptest.NewRequest("PUT", "/api/me", bytes.NewBufferString(`{"display_name":"Budi Santoso Baru"}`))
 	putReqValid.Header.Set("Content-Type", "application/json")
 	putReqValid.Header.Set("X-CSRF-Token", csrfTokenCookie.Value)
 	putReqValid.AddCookie(accessTokenCookie)

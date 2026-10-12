@@ -33,44 +33,58 @@ Implementasi backend API RESTful menggunakan **Golang** dengan arsitektur **Modu
 
 ---
 
-## 🏗️ Arsitektur: Modular Monolith
+## 🏗️ Arsitektur: Clean Architecture + Modular (Orchid Starter Pattern)
 
-Aplikasi dibangun sebagai monolit tunggal yang dideploy dalam satu binary, namun secara internal dibagi menjadi modul-modul independen (*Bounded Contexts*) tanpa ketergantungan melingkar (*no circular imports*):
+Aplikasi dibangun menggunakan template arsitektur **Orchid Starter** dengan router **go-chi/chi/v5**, Dependency Injection Container, dan prinsip Clean Architecture terisolasi:
 
 ```
 .
 ├── cmd/
-│   └── api/
-│       └── main.go                         # Entrypoint aplikasi, wiring modul & HTTP server
+│   └── api/main.go                                # Entrypoint aplikasi & inisialisasi Container
 ├── config/
-│   └── config.go                          # Konfigurasi aplikasi & environment variables
-├── pkg/                                   # Shared Platform & Infrastructure primitives
-│   ├── cookie/
-│   │   ├── cookie.go                      # Abstraksi cookie (HttpOnly, SameSite, Secure, Path)
-│   │   └── cookie_test.go                 # Unit test cookie manager
-│   └── security/
-│       ├── jwt.go                         # Provider JWT dengan dual secret terpisah
-│       ├── csrf.go                        # HMAC Double-Submit CSRF Provider
-│       ├── context.go                     # Context claims helper yang ter-dekupel
-│       ├── jwt_test.go                    # Unit test isolasi dual-secret & expiry
-│       └── csrf_test.go                   # Unit test verifikasi & anti-pemalsuan HMAC
-├── modules/                               # Bounded Context Modules
-│   ├── auth/                              # Modul Autentikasi & Sesi
-│   │   ├── domain/session.go              # Entitas session, DTO login/token, domain errors
-│   │   ├── repository/session_repository.go # Pelacakan rotasi token & status revokasi
-│   │   ├── service/auth_service.go        # Business logic login, RTR, reuse detection, logout
-│   │   ├── handler/auth_handler.go        # HTTP handler autentikasi
-│   │   ├── middleware/auth_middleware.go  # Validasi Access Token (Cookie & Bearer fallback)
-│   │   ├── middleware/csrf_middleware.go  # Verifikasi CSRF pada mutasi data
-│   │   └── module.go                      # Wiring internal modul Auth & pendaftaran rute
-│   └── user/                              # Modul Pengelolaan Pengguna
-│       ├── domain/user.go                 # Entitas user & DTOs
-│       ├── repository/user_repository.go  # Persistence user
-│       ├── service/user_service.go        # Hashing bcrypt & business logic profil
-│       ├── handler/user_handler.go        # HTTP handler profil & update
-│       └── module.go                      # Wiring internal modul User & pendaftaran rute
+│   ├── config.go                                 # Loader env menggunakan caarlos0/env & godotenv
+│   └── model.go                                  # Struct konfigurasi aplikasi & security
+├── constants/
+│   ├── api.go                                    # HTTP Headers & constant string
+│   └── context_key.go                            # Context key typesafe
+├── internal/
+│   ├── bootstrap/
+│   │   ├── container/
+│   │   │   ├── application_container.go          # Direct Injection (DI) Repositories & Usecases
+│   │   │   └── container.go                      # Bootstrap Container (App, Config, DI, Logger)
+│   │   └── server/
+│   │       ├── chi_server.go                     # Inisialisasi Chi Router & global middlewares
+│   │       └── restful_server/
+│   │           ├── application.go                # Route setups per module (Auth & User)
+│   │           ├── restful_server.go             # Server lifecycle & graceful shutdown
+│   │           ├── routes.go                     # Centralized RouteSetup manager
+│   │           └── http_util/                    # Success, NotFound, & HealthCheck handlers
+│   ├── common/
+│   │   ├── env.go                                # Helper env parsing
+│   │   ├── request_context.go                    # Context request-id helpers
+│   │   └── model/                                # Common standard Response & Context models
+│   └── middleware/
+│       ├── auth_middleware.go                    # Validasi Access Token (Cookie & Bearer)
+│       └── csrf_middleware.go                    # Proteksi Double-Submit CSRF pada mutasi data
+├── modules/
+│   ├── auth/                                     # Modul Autentikasi & Sesi
+│   │   ├── delivery/
+│   │   │   ├── api/rest/handler.go               # Router registration
+│   │   │   ├── api/rest/v1/handler_v1.go         # REST API Handlers (Login, Refresh, Logout, CSRF)
+│   │   │   └── models/                           # Request & Response DTOs
+│   │   ├── domain/                               # Entitas Session & Domain Errors
+│   │   ├── repository/                           # Session Repository Interface & Storage
+│   │   └── usecase/                              # Business Logic (Dual-Secret, RTR, Reuse Detection)
+│   └── user/                                     # Modul Pengelolaan Pengguna
+│       ├── delivery/                             # REST API Handlers & DTOs
+│       ├── domain/                               # User Entity & Domain Errors
+│       ├── repository/                           # User Repository Interface & Storage
+│       └── usecase/                              # User Business Logic & Password Hashing
+├── pkg/
+│   └── cookie/                                   # Abstraksi cookie (HttpOnly, SameSite, Secure, Path)
+├── security/                                     # Primitif Kriptografi (JWT, CSRF, SHA256 Hashing)
 └── tests/
-    └── auth_flow_test.go                  # End-to-end integration test
+    └── auth_flow_test.go                         # End-to-end integration test
 ```
 
 ### Prinsip Modul:

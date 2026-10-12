@@ -5,27 +5,21 @@ import (
 	"sync"
 
 	"github.com/yudhiana/web-api/modules/auth/domain"
+	authModel "github.com/yudhiana/web-api/modules/auth/domain/models"
 )
-
-type SessionRepository interface {
-	Save(ctx context.Context, session *domain.RefreshTokenSession) error
-	FindByID(ctx context.Context, id string) (*domain.RefreshTokenSession, error)
-	Revoke(ctx context.Context, id string) error
-	RevokeAllForUser(ctx context.Context, userID string) error
-}
 
 type memorySessionRepository struct {
 	mu       sync.RWMutex
-	sessions map[string]*domain.RefreshTokenSession // key: session.ID (token JTI)
+	sessions map[string]*authModel.RefreshTokenSession // key: session.ID (token JTI)
 }
 
-func NewMemorySessionRepository() SessionRepository {
+func NewSessionRepository() SessionRepositoryInterface {
 	return &memorySessionRepository{
-		sessions: make(map[string]*domain.RefreshTokenSession),
+		sessions: make(map[string]*authModel.RefreshTokenSession),
 	}
 }
 
-func (r *memorySessionRepository) Save(ctx context.Context, session *domain.RefreshTokenSession) error {
+func (r *memorySessionRepository) Save(ctx context.Context, session *authModel.RefreshTokenSession) error {
 	r.mu.Lock()
 	defer r.mu.Unlock()
 
@@ -33,7 +27,7 @@ func (r *memorySessionRepository) Save(ctx context.Context, session *domain.Refr
 	return nil
 }
 
-func (r *memorySessionRepository) FindByID(ctx context.Context, id string) (*domain.RefreshTokenSession, error) {
+func (r *memorySessionRepository) FindByID(ctx context.Context, id string) (*authModel.RefreshTokenSession, error) {
 	r.mu.RLock()
 	defer r.mu.RUnlock()
 

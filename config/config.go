@@ -1,72 +1,22 @@
 package config
 
 import (
-	"os"
-	"strconv"
-	"strings"
-	"time"
+	"log"
+
+	"github.com/caarlos0/env/v11"
+	"github.com/joho/godotenv"
 )
 
-// Config menyimpan seluruh konfigurasi aplikasi termasuk secret keys, cookie settings, dan debug mode
-type Config struct {
-	Port               string
-	Environment        string // "development" atau "production"
-	DebugMode          bool   // Menampilkan rute, banner, serta incoming/outgoing log
-	AccessTokenSecret  string
-	RefreshTokenSecret string
-	CSRFSecret         string
-	AccessTokenTTL     time.Duration
-	RefreshTokenTTL    time.Duration
-	CookieSecure       bool
-	CookieDomain       string
-}
+// GetLocalConfig loads configuration from environment variables and .env file
+func GetLocalConfig() *LocalConfig {
+	// Attempt loading .env from current directory or parent directories
+	_ = godotenv.Load(".env")
+	_ = godotenv.Load("../../.env")
 
-// LoadConfig memuat konfigurasi dari environment variables dengan nilai default
-func LoadConfig() *Config {
-	env := getEnv("APP_ENV", "development")
-	isProd := env == "production"
-
-	accessTTLMinutes := getEnvAsInt("ACCESS_TOKEN_TTL_MINUTES", 15)
-	refreshTTLDays := getEnvAsInt("REFRESH_TOKEN_TTL_DAYS", 7)
-
-	return &Config{
-		Port:               getEnv("PORT", "8080"),
-		Environment:        env,
-		DebugMode:          getEnvAsBool("DEBUG_MODE", !isProd), // default true di development
-		AccessTokenSecret:  getEnv("ACCESS_TOKEN_SECRET", "super-secret-access-token-key-change-in-production-min-32-chars!"),
-		RefreshTokenSecret: getEnv("REFRESH_TOKEN_SECRET", "super-secret-refresh-token-key-change-in-production-min-32-chars!"),
-		CSRFSecret:         getEnv("CSRF_SECRET", "super-secret-csrf-key-change-in-production-min-32-chars!"),
-		AccessTokenTTL:     time.Duration(accessTTLMinutes) * time.Minute,
-		RefreshTokenTTL:    time.Duration(refreshTTLDays) * 24 * time.Hour,
-		CookieSecure:       isProd, // true jika production (hanya lewat HTTPS)
-		CookieDomain:       getEnv("COOKIE_DOMAIN", ""),
+	var localConfig LocalConfig
+	if err := env.Parse(&localConfig); err != nil {
+		log.Fatalf("failed to parse environment configurations: %v", err)
 	}
-}
 
-func getEnv(key, defaultVal string) string {
-	if val := os.Getenv(key); val != "" {
-		return val
-	}
-	return defaultVal
-}
-
-func getEnvAsInt(key string, defaultVal int) int {
-	valStr := os.Getenv(key)
-	if valStr == "" {
-		return defaultVal
-	}
-	val, err := strconv.Atoi(valStr)
-	if err != nil {
-		return defaultVal
-	}
-	return val
-}
-
-func getEnvAsBool(key string, defaultVal bool) bool {
-	valStr := os.Getenv(key)
-	if valStr == "" {
-		return defaultVal
-	}
-	valStr = strings.ToLower(valStr)
-	return valStr == "true" || valStr == "1" || valStr == "yes"
+	return &localConfig
 }
