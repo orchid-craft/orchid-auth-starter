@@ -6,8 +6,8 @@ import (
 
 	chiMiddleware "github.com/go-chi/chi/v5/middleware"
 	"github.com/olympus-forge/logos"
-	"github.com/yudhiana/web-api/constants"
-	modelCommon "github.com/yudhiana/web-api/internal/common/model"
+	"github.com/orchid-craft/orchid-auth-starter/constants"
+	modelCommon "github.com/orchid-craft/orchid-auth-starter/internal/common/model"
 )
 
 // ExtractRequestContext extracts common headers from http.Request and creates RequestContext

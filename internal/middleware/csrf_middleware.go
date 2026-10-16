@@ -3,10 +3,10 @@ package middleware
 import (
 	"net/http"
 
-	"github.com/yudhiana/web-api/constants"
-	httpUtil "github.com/yudhiana/web-api/internal/bootstrap/server/restful_server/http_util"
-	"github.com/yudhiana/web-api/pkg/cookie"
-	"github.com/yudhiana/web-api/security"
+	"github.com/orchid-craft/orchid-auth-starter/constants"
+	httpUtil "github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server/http_util"
+	"github.com/orchid-craft/orchid-auth-starter/pkg/cookie"
+	"github.com/orchid-craft/orchid-auth-starter/security"
 	bunker "github.com/yudhiana/bunker/errors"
 )
 

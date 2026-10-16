@@ -2,9 +2,9 @@ package rest
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/yudhiana/web-api/internal/middleware"
-	v1 "github.com/yudhiana/web-api/modules/user/delivery/api/rest/v1"
-	"github.com/yudhiana/web-api/modules/user/usecase"
+	"github.com/orchid-craft/orchid-auth-starter/internal/middleware"
+	v1 "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/api/rest/v1"
+	"github.com/orchid-craft/orchid-auth-starter/modules/user/usecase"
 )
 
 func NewUserHandler(

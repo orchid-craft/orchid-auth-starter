@@ -4,15 +4,15 @@ import (
 	"context"
 
 	"github.com/olympus-forge/logos"
-	"github.com/yudhiana/web-api/config"
-	"github.com/yudhiana/web-api/internal/middleware"
-	authRepo "github.com/yudhiana/web-api/modules/auth/repository"
-	authUsecase "github.com/yudhiana/web-api/modules/auth/usecase"
-	userRepo "github.com/yudhiana/web-api/modules/user/repository"
-	userUsecase "github.com/yudhiana/web-api/modules/user/usecase"
-	userReq "github.com/yudhiana/web-api/modules/user/delivery/models/request"
-	"github.com/yudhiana/web-api/pkg/cookie"
-	"github.com/yudhiana/web-api/security"
+	"github.com/orchid-craft/orchid-auth-starter/config"
+	"github.com/orchid-craft/orchid-auth-starter/internal/middleware"
+	authRepo "github.com/orchid-craft/orchid-auth-starter/modules/auth/repository"
+	authUsecase "github.com/orchid-craft/orchid-auth-starter/modules/auth/usecase"
+	userRepo "github.com/orchid-craft/orchid-auth-starter/modules/user/repository"
+	userUsecase "github.com/orchid-craft/orchid-auth-starter/modules/user/usecase"
+	userReq "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/models/request"
+	"github.com/orchid-craft/orchid-auth-starter/pkg/cookie"
+	"github.com/orchid-craft/orchid-auth-starter/security"
 )
 
 type DirectInjection struct {

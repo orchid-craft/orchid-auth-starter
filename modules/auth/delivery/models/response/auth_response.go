@@ -1,7 +1,7 @@
 package response
 
 import (
-	userResponse "github.com/yudhiana/web-api/modules/user/delivery/models/response"
+	userResponse "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/models/response"
 )
 
 type AuthResponse struct {

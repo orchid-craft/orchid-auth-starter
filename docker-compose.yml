@@ -3,7 +3,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: web-api
+    container_name: orchid-auth-starter
     ports:
       - "8080:8080"
     environment:

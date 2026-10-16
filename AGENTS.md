@@ -1,7 +1,7 @@
 # AI Coding Agent Guidelines & Repository Instructions
 
 Welcome AI Agent (Antigravity, Claude Code, Cursor, Copilot, Windsurf, Aider, Cline, etc.).
-This file defines the architecture, project standards, coding conventions, and critical safety rules for the **`web-api`** project.
+This file defines the architecture, project standards, coding conventions, and critical safety rules for the **`orchid-auth-starter`** project.
 
 ---
 

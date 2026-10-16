@@ -1,4 +1,4 @@
-# Multi-stage build for web-api (Orchid Starter Clean Architecture)
+# Multi-stage build for orchid-auth-starter (Orchid Starter Clean Architecture)
 FROM golang:alpine AS builder
 
 WORKDIR /app

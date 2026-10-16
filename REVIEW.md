@@ -1,4 +1,4 @@
-# Ulasan Proyek `web-api` — Modular Monolith Auth + CSRF Protection
+# Ulasan Proyek `orchid-auth-starter` — Modular Monolith Auth + CSRF Protection
 
 Tanggal ulasan: 12 Oktober 2026
 Metode: baca seluruh struktur kode (`security/`, `modules/auth`, `modules/user`, `internal/middleware`, `pkg/cookie`, `internal/bootstrap`), `go vet ./...` dan `go test -count=1 ./...` (semua PASS).

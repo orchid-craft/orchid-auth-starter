@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	userModel "github.com/yudhiana/web-api/modules/user/domain/models"
+	userModel "github.com/orchid-craft/orchid-auth-starter/modules/user/domain/models"
 )
 
 type UserRepositoryInterface interface {

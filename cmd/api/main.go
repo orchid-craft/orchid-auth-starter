@@ -4,8 +4,8 @@ import (
 	"log"
 
 	_ "github.com/joho/godotenv/autoload"
-	"github.com/yudhiana/web-api/internal/bootstrap/container"
-	restfulServer "github.com/yudhiana/web-api/internal/bootstrap/server/restful_server"
+	"github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/container"
+	restfulServer "github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server"
 )
 
 func main() {

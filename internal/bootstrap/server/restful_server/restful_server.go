@@ -13,8 +13,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/olympus-forge/logos"
-	"github.com/yudhiana/web-api/config"
-	"github.com/yudhiana/web-api/internal/bootstrap/container"
+	"github.com/orchid-craft/orchid-auth-starter/config"
+	"github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/container"
 )
 
 type Server struct {
@@ -58,7 +58,7 @@ func (s *Server) PrintRouteBanner() {
 	})
 
 	fmt.Println("========================================================================")
-	fmt.Printf("🚀  ORCHID STARTER WEB API (go-chi/chi/v5)\n")
+	fmt.Printf("🚀  ORCHID AUTH STARTER (go-chi/chi/v5)\n")
 	fmt.Printf("📡  Port Server : :%s\n", s.cfg.AppPort)
 	fmt.Printf("🌐  Host Server : %s\n", s.cfg.AppHost)
 	fmt.Printf("🔒  Environment : %s\n", s.cfg.AppEnv)

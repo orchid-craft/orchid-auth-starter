@@ -1,4 +1,4 @@
-module github.com/yudhiana/web-api
+module github.com/orchid-craft/orchid-auth-starter
 
 go 1.27.0
 

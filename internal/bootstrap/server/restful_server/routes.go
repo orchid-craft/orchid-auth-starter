@@ -2,7 +2,7 @@ package restfulServer
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/yudhiana/web-api/internal/bootstrap/container"
+	"github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/container"
 )
 
 // RouteSetup represents a function that sets up routes

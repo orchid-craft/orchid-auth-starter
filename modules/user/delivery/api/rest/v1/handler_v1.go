@@ -6,12 +6,12 @@ import (
 	"net/http"
 
 	bunker "github.com/yudhiana/bunker/errors"
-	httpUtil "github.com/yudhiana/web-api/internal/bootstrap/server/restful_server/http_util"
-	reqModel "github.com/yudhiana/web-api/modules/user/delivery/models/request"
-	"github.com/yudhiana/web-api/modules/user/domain"
-	"github.com/yudhiana/web-api/modules/user/usecase"
-	"github.com/yudhiana/web-api/pkg/validator"
-	"github.com/yudhiana/web-api/security"
+	httpUtil "github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server/http_util"
+	reqModel "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/models/request"
+	"github.com/orchid-craft/orchid-auth-starter/modules/user/domain"
+	"github.com/orchid-craft/orchid-auth-starter/modules/user/usecase"
+	"github.com/orchid-craft/orchid-auth-starter/pkg/validator"
+	"github.com/orchid-craft/orchid-auth-starter/security"
 )
 
 type userHandler struct {

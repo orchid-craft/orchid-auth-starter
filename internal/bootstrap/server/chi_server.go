@@ -7,9 +7,9 @@ import (
 	"github.com/go-chi/chi/v5"
 	"github.com/go-chi/chi/v5/middleware"
 	"github.com/olympus-forge/logos"
-	"github.com/yudhiana/web-api/constants"
-	httpUtil "github.com/yudhiana/web-api/internal/bootstrap/server/restful_server/http_util"
-	modelCommon "github.com/yudhiana/web-api/internal/common/model"
+	"github.com/orchid-craft/orchid-auth-starter/constants"
+	httpUtil "github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server/http_util"
+	modelCommon "github.com/orchid-craft/orchid-auth-starter/internal/common/model"
 )
 
 type chiApplication struct {

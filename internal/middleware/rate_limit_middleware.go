@@ -9,7 +9,7 @@ import (
 	"time"
 
 	bunker "github.com/yudhiana/bunker/errors"
-	httpUtil "github.com/yudhiana/web-api/internal/bootstrap/server/restful_server/http_util"
+	httpUtil "github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server/http_util"
 )
 
 type clientRecord struct {

@@ -3,7 +3,7 @@ package model
 import (
 	"context"
 
-	"github.com/yudhiana/web-api/constants"
+	"github.com/orchid-craft/orchid-auth-starter/constants"
 )
 
 // RequestContext contains common request metadata extracted from headers

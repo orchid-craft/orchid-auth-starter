@@ -4,7 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
-	modelCommon "github.com/yudhiana/web-api/internal/common/model"
+	modelCommon "github.com/orchid-craft/orchid-auth-starter/internal/common/model"
 	bunker "github.com/yudhiana/bunker/errors"
 )
 

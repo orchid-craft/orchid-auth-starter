@@ -2,10 +2,10 @@ package restfulServer
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/yudhiana/web-api/internal/bootstrap/container"
-	httpUtil "github.com/yudhiana/web-api/internal/bootstrap/server/restful_server/http_util"
-	authDelivery "github.com/yudhiana/web-api/modules/auth/delivery/api/rest"
-	userDelivery "github.com/yudhiana/web-api/modules/user/delivery/api/rest"
+	"github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/container"
+	httpUtil "github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server/http_util"
+	authDelivery "github.com/orchid-craft/orchid-auth-starter/modules/auth/delivery/api/rest"
+	userDelivery "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/api/rest"
 )
 
 // SetupCommonRoutes configures health checks and general endpoints

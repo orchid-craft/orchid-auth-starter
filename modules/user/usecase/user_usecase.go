@@ -8,10 +8,10 @@ import (
 	"github.com/google/uuid"
 	"golang.org/x/crypto/bcrypt"
 
-	reqModel "github.com/yudhiana/web-api/modules/user/delivery/models/request"
-	resModel "github.com/yudhiana/web-api/modules/user/delivery/models/response"
-	userModel "github.com/yudhiana/web-api/modules/user/domain/models"
-	"github.com/yudhiana/web-api/modules/user/repository"
+	reqModel "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/models/request"
+	resModel "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/models/response"
+	userModel "github.com/orchid-craft/orchid-auth-starter/modules/user/domain/models"
+	"github.com/orchid-craft/orchid-auth-starter/modules/user/repository"
 )
 
 type userUsecase struct {

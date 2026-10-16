@@ -3,7 +3,7 @@ package security
 import (
 	"context"
 
-	"github.com/yudhiana/web-api/constants"
+	"github.com/orchid-craft/orchid-auth-starter/constants"
 )
 
 // SetClaimsContext menyimpan claims JWT pengguna ke dalam context

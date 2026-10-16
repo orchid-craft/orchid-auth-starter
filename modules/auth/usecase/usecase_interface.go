@@ -3,8 +3,8 @@ package usecase
 import (
 	"context"
 
-	authReq "github.com/yudhiana/web-api/modules/auth/delivery/models/request"
-	authRes "github.com/yudhiana/web-api/modules/auth/delivery/models/response"
+	authReq "github.com/orchid-craft/orchid-auth-starter/modules/auth/delivery/models/request"
+	authRes "github.com/orchid-craft/orchid-auth-starter/modules/auth/delivery/models/response"
 )
 
 type AuthUsecaseInterface interface {

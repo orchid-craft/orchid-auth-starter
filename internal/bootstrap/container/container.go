@@ -5,8 +5,8 @@ import (
 
 	"github.com/go-chi/chi/v5"
 	"github.com/olympus-forge/logos"
-	"github.com/yudhiana/web-api/config"
-	"github.com/yudhiana/web-api/internal/bootstrap/server"
+	"github.com/orchid-craft/orchid-auth-starter/config"
+	"github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server"
 )
 
 type Container struct {

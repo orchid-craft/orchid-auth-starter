@@ -3,7 +3,7 @@ package config
 import "time"
 
 type LocalConfig struct {
-	AppName    string `env:"APP_NAME" envDefault:"web-api"`
+	AppName    string `env:"APP_NAME" envDefault:"orchid-auth-starter"`
 	AppPort    string `env:"APP_PORT" envDefault:"8080"`
 	AppHost    string `env:"APP_HOST" envDefault:"0.0.0.0"`
 	AppVersion string `env:"APP_VERSION" envDefault:"1.0.0"`

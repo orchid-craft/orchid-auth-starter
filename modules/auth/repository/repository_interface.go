@@ -3,7 +3,7 @@ package repository
 import (
 	"context"
 
-	authModel "github.com/yudhiana/web-api/modules/auth/domain/models"
+	authModel "github.com/orchid-craft/orchid-auth-starter/modules/auth/domain/models"
 )
 
 type SessionRepositoryInterface interface {

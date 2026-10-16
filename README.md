@@ -1,4 +1,4 @@
-# Web API - Modular Monolith Authentication & CSRF Protection
+# Orchid Auth Starter - Modular Monolith Authentication & CSRF Protection
 
 [![Template: Orchid Starter](https://img.shields.io/badge/Template-orchid--starter-6366f1?style=flat-square&logo=github&logoColor=white)](https://github.com/orchid-craft/orchid-starter)
 [![Router: Chi](https://img.shields.io/badge/Router-go--chi%2Fchi%2Fv5-00ADD8?style=flat-square&logo=go&logoColor=white)](https://github.com/go-chi/chi)
@@ -535,7 +535,7 @@ go run cmd/api/main.go
 Output log saat server booting:
 ```text
 ========================================================================
-🚀  ORCHID STARTER WEB API (go-chi/chi/v5)
+🚀  ORCHID AUTH STARTER (go-chi/chi/v5)
 📡  Port Server : :8080
 🌐  Host Server : 0.0.0.0
 🔒  Environment : development
@@ -574,9 +574,9 @@ Hasil pengujian:
 === RUN   TestEndToEndAuthFlow
 --- PASS: TestEndToEndAuthFlow (0.23s)
 PASS
-ok      github.com/yudhiana/web-api/pkg/cookie      0.003s
-ok      github.com/yudhiana/web-api/security        0.003s
-ok      github.com/yudhiana/web-api/tests           0.232s
+ok      github.com/orchid-craft/orchid-auth-starter/pkg/cookie      0.003s
+ok      github.com/orchid-craft/orchid-auth-starter/security        0.003s
+ok      github.com/orchid-craft/orchid-auth-starter/tests           0.232s
 ```
 
 ---

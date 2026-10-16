@@ -3,9 +3,9 @@ package usecase
 import (
 	"context"
 
-	reqModel "github.com/yudhiana/web-api/modules/user/delivery/models/request"
-	resModel "github.com/yudhiana/web-api/modules/user/delivery/models/response"
-	userModel "github.com/yudhiana/web-api/modules/user/domain/models"
+	reqModel "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/models/request"
+	resModel "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/models/response"
+	userModel "github.com/orchid-craft/orchid-auth-starter/modules/user/domain/models"
 )
 
 type UserUsecaseInterface interface {

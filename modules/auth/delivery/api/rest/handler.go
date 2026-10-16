@@ -2,11 +2,11 @@ package rest
 
 import (
 	"github.com/go-chi/chi/v5"
-	"github.com/yudhiana/web-api/internal/middleware"
-	v1 "github.com/yudhiana/web-api/modules/auth/delivery/api/rest/v1"
-	"github.com/yudhiana/web-api/modules/auth/usecase"
-	"github.com/yudhiana/web-api/pkg/cookie"
-	"github.com/yudhiana/web-api/security"
+	"github.com/orchid-craft/orchid-auth-starter/internal/middleware"
+	v1 "github.com/orchid-craft/orchid-auth-starter/modules/auth/delivery/api/rest/v1"
+	"github.com/orchid-craft/orchid-auth-starter/modules/auth/usecase"
+	"github.com/orchid-craft/orchid-auth-starter/pkg/cookie"
+	"github.com/orchid-craft/orchid-auth-starter/security"
 )
 
 func NewAuthHandler(

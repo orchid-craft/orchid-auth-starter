@@ -1,4 +1,4 @@
-# Cursor Rules for web-api
+# Cursor Rules for orchid-auth-starter
 
 ## Critical Directives
 - DO NOT run `git commit` or `git push` without explicit user confirmation.

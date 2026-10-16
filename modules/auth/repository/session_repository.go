@@ -4,8 +4,8 @@ import (
 	"context"
 	"sync"
 
-	"github.com/yudhiana/web-api/modules/auth/domain"
-	authModel "github.com/yudhiana/web-api/modules/auth/domain/models"
+	"github.com/orchid-craft/orchid-auth-starter/modules/auth/domain"
+	authModel "github.com/orchid-craft/orchid-auth-starter/modules/auth/domain/models"
 )
 
 type memorySessionRepository struct {
