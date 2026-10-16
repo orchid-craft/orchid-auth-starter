@@ -15,33 +15,44 @@ import (
 	"github.com/olympus-forge/logos"
 	"github.com/orchid-craft/orchid-auth-starter/config"
 	"github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/container"
+	"github.com/orchid-craft/orchid-auth-starter/internal/middleware"
 )
 
 type Server struct {
-	cfg *config.LocalConfig
-	app *chi.Mux
-	log *logos.LogEntry
+	cfg         *config.LocalConfig
+	app         *chi.Mux
+	log         *logos.LogEntry
+	di          *container.DirectInjection
+	rateLimiter *middleware.RateLimiterMiddleware
 }
 
 func NewServer(c *container.Container) *Server {
+	rateLimiter := middleware.NewRateLimiterMiddleware(c.Cfg.RateLimitAuthRequests, c.Cfg.RateLimitAuthWindow())
+
 	srv := &Server{
-		cfg: c.GetConfig(),
-		app: c.GetApp(),
-		log: c.Log,
+		cfg:         c.GetConfig(),
+		app:         c.GetApp(),
+		log:         c.Log,
+		di:          c.GetDI(),
+		rateLimiter: rateLimiter,
 	}
 
-	srv.setupRoutes(c)
+	srv.setupRoutes()
 	return srv
 }
 
-func (s *Server) setupRoutes(c *container.Container) {
+func (s *Server) setupRoutes() {
 	routeSetups := []RouteSetup{
 		SetupCommonRoutes,
 		SetupAuthRoutes,
 		SetupUserRoutes,
 	}
 
-	SetupAllRoutes(s.app, c, routeSetups...)
+	SetupAllRoutes(s, routeSetups...)
+}
+
+func (s *Server) GetRateLimiter() *middleware.RateLimiterMiddleware {
+	return s.rateLimiter
 }
 
 func (s *Server) PrintRouteBanner() {
@@ -114,6 +125,10 @@ func (s *Server) Run() error {
 
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
+
+		if s.rateLimiter != nil {
+			s.rateLimiter.Close()
+		}
 
 		if err := srv.Shutdown(ctx); err != nil {
 			s.log.Error("🔴Forced shutdown", "err", err)

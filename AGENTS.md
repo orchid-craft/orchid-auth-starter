@@ -40,7 +40,7 @@ This repository follows the **Orchid Starter** Clean Architecture & Modular patt
 │   │   └── server/
 │   │       ├── chi_server.go               # Inisialisasi chi.NewRouter() & middlewares
 │   │       └── restful_server/
-│   │           ├── application.go          # Registrasi rute modul (Auth & User)
+│   │           ├── application.go          # Registrasi rute modul & middleware (Auth & User)
 │   │           ├── restful_server.go       # Server lifecycle, chi.Walk banner & shutdown
 │   │           ├── routes.go               # Abstraksi SetupAllRoutes
 │   │           └── http_util/              # SuccessResponse, ErrorResponse, HealthCheck
@@ -54,7 +54,6 @@ This repository follows the **Orchid Starter** Clean Architecture & Modular patt
 ├── modules/
 │   ├── auth/                               # Modul Autentikasi
 │   │   ├── delivery/
-│   │   │   ├── api/rest/handler.go         # Router mounting (/api/auth)
 │   │   │   ├── api/rest/v1/handler_v1.go   # REST Handlers (Register, Login, Refresh, Logout)
 │   │   │   └── models/                     # Request & Response DTOs
 │   │   ├── domain/                         # Entitas Session & Domain Errors

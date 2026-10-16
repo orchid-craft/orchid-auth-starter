@@ -21,16 +21,16 @@ import (
 type authUsecase struct {
 	userUsecase    userUsecase.UserUsecaseInterface
 	sessionRepo    repository.SessionRepositoryInterface
-	jwtManager     *security.JWTManager
-	csrfManager    *security.CSRFManager
+	jwtManager     TokenManagerInterface
+	csrfManager    CSRFManagerInterface
 	accessTokenTTL time.Duration
 }
 
 func NewAuthUsecase(
 	userUc userUsecase.UserUsecaseInterface,
 	sessionRepo repository.SessionRepositoryInterface,
-	jwtManager *security.JWTManager,
-	csrfManager *security.CSRFManager,
+	jwtManager TokenManagerInterface,
+	csrfManager CSRFManagerInterface,
 	accessTokenTTL time.Duration,
 ) AuthUsecaseInterface {
 	return &authUsecase{
@@ -205,4 +205,8 @@ func (u *authUsecase) Logout(ctx context.Context, rawRefreshToken string) error 
 	}
 
 	return u.sessionRepo.Revoke(ctx, claims.TokenID)
+}
+
+func (u *authUsecase) GetCSRFToken(ctx context.Context) (string, error) {
+	return u.csrfManager.GenerateToken()
 }

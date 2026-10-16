@@ -13,20 +13,17 @@ import (
 	userDomain "github.com/orchid-craft/orchid-auth-starter/modules/user/domain"
 	"github.com/orchid-craft/orchid-auth-starter/pkg/cookie"
 	"github.com/orchid-craft/orchid-auth-starter/pkg/validator"
-	"github.com/orchid-craft/orchid-auth-starter/security"
 )
 
 type authHandler struct {
 	usecase       usecase.AuthUsecaseInterface
 	cookieManager *cookie.Manager
-	csrfManager   *security.CSRFManager
 }
 
-func NewAuthHandler(u usecase.AuthUsecaseInterface, cm *cookie.Manager, csrf *security.CSRFManager) *authHandler {
+func NewAuthHandler(u usecase.AuthUsecaseInterface, cm *cookie.Manager) *authHandler {
 	return &authHandler{
 		usecase:       u,
 		cookieManager: cm,
-		csrfManager:   csrf,
 	}
 }
 
@@ -139,7 +136,7 @@ func (h *authHandler) Logout(w http.ResponseWriter, r *http.Request) {
 
 // CSRFToken menghasilkan token CSRF awal untuk client (SPA / Web App)
 func (h *authHandler) CSRFToken(w http.ResponseWriter, r *http.Request) {
-	csrfToken, err := h.csrfManager.GenerateToken()
+	csrfToken, err := h.usecase.GetCSRFToken(r.Context())
 	if err != nil {
 		httpUtil.ErrorResponse(w, bunker.New(bunker.StatusUnprocessableEntity).SetMessage(err.Error()))
 		return
