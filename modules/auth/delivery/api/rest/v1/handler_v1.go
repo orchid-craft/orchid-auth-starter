@@ -31,13 +31,13 @@ func NewAuthHandler(u usecase.AuthUsecaseInterface, cm *cookie.Manager) *authHan
 func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 	var req authReq.RegisterRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errBunker := bunker.New(bunker.StatusBadRequest).SetMessage("format request payload tidak valid")
+		errBunker := httpUtil.NewAppError(bunker.StatusBadRequest, "format request payload tidak valid")
 		httpUtil.ErrorResponse(w, errBunker)
 		return
 	}
 
 	if err := validator.ValidateStruct(&req); err != nil {
-		httpUtil.ErrorResponse(w, bunker.New(bunker.StatusBadRequest).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(bunker.StatusBadRequest, err.Error()))
 		return
 	}
 
@@ -47,7 +47,7 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, userDomain.ErrUserAlreadyExists) {
 			status = bunker.StatusConflict
 		}
-		httpUtil.ErrorResponse(w, bunker.New(status).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(status, err.Error()))
 		return
 	}
 
@@ -62,13 +62,13 @@ func (h *authHandler) Register(w http.ResponseWriter, r *http.Request) {
 func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 	var req authReq.LoginRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errBunker := bunker.New(bunker.StatusBadRequest).SetMessage("format request payload tidak valid")
+		errBunker := httpUtil.NewAppError(bunker.StatusBadRequest, "format request payload tidak valid")
 		httpUtil.ErrorResponse(w, errBunker)
 		return
 	}
 
 	if err := validator.ValidateStruct(&req); err != nil {
-		httpUtil.ErrorResponse(w, bunker.New(bunker.StatusBadRequest).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(bunker.StatusBadRequest, err.Error()))
 		return
 	}
 
@@ -78,7 +78,7 @@ func (h *authHandler) Login(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, domain.ErrInvalidCredentials) {
 			status = bunker.StatusUnAuthorized
 		}
-		httpUtil.ErrorResponse(w, bunker.New(status).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(status, err.Error()))
 		return
 	}
 
@@ -97,7 +97,7 @@ func (h *authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 	}
 
 	if tokenStr == "" {
-		httpUtil.ErrorResponse(w, bunker.New(bunker.StatusUnAuthorized).SetMessage(domain.ErrMissingRefreshToken.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(bunker.StatusUnAuthorized, domain.ErrMissingRefreshToken.Error()))
 		return
 	}
 
@@ -108,7 +108,7 @@ func (h *authHandler) RefreshToken(w http.ResponseWriter, r *http.Request) {
 			status = bunker.StatusForbidden
 			h.cookieManager.ClearAuthCookies(w)
 		}
-		httpUtil.ErrorResponse(w, bunker.New(status).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(status, err.Error()))
 		return
 	}
 
@@ -138,7 +138,7 @@ func (h *authHandler) Logout(w http.ResponseWriter, r *http.Request) {
 func (h *authHandler) CSRFToken(w http.ResponseWriter, r *http.Request) {
 	csrfToken, err := h.usecase.GetCSRFToken(r.Context())
 	if err != nil {
-		httpUtil.ErrorResponse(w, bunker.New(bunker.StatusUnprocessableEntity).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(bunker.StatusUnprocessableEntity, err.Error()))
 		return
 	}
 

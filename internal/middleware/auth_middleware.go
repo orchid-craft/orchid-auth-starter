@@ -27,7 +27,7 @@ func RequireAuth(jwtManager *security.JWTManager) func(http.Handler) http.Handle
 			}
 
 			if tokenStr == "" {
-				err := bunker.New(bunker.StatusUnAuthorized).SetMessage("autentikasi dibutuhkan: token tidak ditemukan")
+				err := httpUtil.NewAppError(bunker.StatusUnAuthorized, "autentikasi dibutuhkan: token tidak ditemukan")
 				httpUtil.ErrorResponse(w, err)
 				return
 			}
@@ -39,7 +39,7 @@ func RequireAuth(jwtManager *security.JWTManager) func(http.Handler) http.Handle
 				if err == security.ErrTokenExpired {
 					msg = "token telah kedaluwarsa"
 				}
-				errBunker := bunker.New(status).SetMessage(msg)
+				errBunker := httpUtil.NewAppError(status, msg)
 				httpUtil.ErrorResponse(w, errBunker)
 				return
 			}
@@ -56,7 +56,7 @@ func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 			claims, ok := security.GetClaimsContext(r.Context())
 			if !ok || claims == nil {
-				err := bunker.New(bunker.StatusUnAuthorized).SetMessage("autentikasi dibutuhkan: klaim pengguna tidak ditemukan")
+				err := httpUtil.NewAppError(bunker.StatusUnAuthorized, "autentikasi dibutuhkan: klaim pengguna tidak ditemukan")
 				httpUtil.ErrorResponse(w, err)
 				return
 			}
@@ -70,7 +70,7 @@ func RequireRole(allowedRoles ...string) func(http.Handler) http.Handler {
 			}
 
 			if !isAllowed {
-				err := bunker.New(bunker.StatusForbidden).SetMessage("akses ditolak: peran pengguna tidak memiliki izin yang cukup")
+				err := httpUtil.NewAppError(bunker.StatusForbidden, "akses ditolak: peran pengguna tidak memiliki izin yang cukup")
 				httpUtil.ErrorResponse(w, err)
 				return
 			}

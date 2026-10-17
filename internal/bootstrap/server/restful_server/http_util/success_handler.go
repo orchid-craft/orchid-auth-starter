@@ -18,10 +18,18 @@ func SuccessResponse(w http.ResponseWriter, data any) {
 	})
 }
 
+// NewAppError mengembalikan salinan *bunker.ApplicationError yang independen dan aman
+// digunakan secara konkuren. Ini mencegah race condition karena bunker.New mengembalikan
+// pointer ke variabel global singleton (mis. bunker.Forbidden) yang termutasi jika SetMessage dipanggil.
+func NewAppError(code bunker.AppErrorCode, message string) *bunker.ApplicationError {
+	cp := *bunker.New(code)
+	return cp.SetMessage(message)
+}
+
 func ErrorResponse(w http.ResponseWriter, err error) {
 	bunkerErr, ok := err.(*bunker.ApplicationError)
 	if !ok {
-		bunkerErr = bunker.New(bunker.StatusUnprocessableEntity).SetMessage(err.Error())
+		bunkerErr = NewAppError(bunker.StatusUnprocessableEntity, err.Error())
 	}
 
 	w.Header().Set("Content-Type", "application/json")

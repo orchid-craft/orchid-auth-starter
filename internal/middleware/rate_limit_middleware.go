@@ -101,7 +101,7 @@ func (rl *RateLimiterMiddleware) Limit(next http.Handler) http.Handler {
 			rl.mu.Unlock()
 
 			w.Header().Set("Retry-After", strconv.Itoa(retryAfter))
-			err := bunker.New(bunker.StatusTooManyRequests).SetMessage("terlalu banyak permintaan, silakan coba lagi beberapa saat lagi")
+			err := httpUtil.NewAppError(bunker.StatusTooManyRequests, "terlalu banyak permintaan, silakan coba lagi beberapa saat lagi")
 			httpUtil.ErrorResponse(w, err)
 			return
 		}

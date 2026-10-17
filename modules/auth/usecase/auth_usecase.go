@@ -2,6 +2,7 @@ package usecase
 
 import (
 	"context"
+	"crypto/subtle"
 	"errors"
 	"fmt"
 	"time"
@@ -138,19 +139,19 @@ func (u *authUsecase) RefreshToken(ctx context.Context, rawRefreshToken string) 
 		return nil, domain.ErrTokenExpired
 	}
 
-	// Deteksi reuse attempt: Jika token sudah dicabut, cabut seluruh keluarga token user
-	if session.Revoked {
-		_ = u.sessionRepo.RevokeAllForUser(ctx, claims.UserID)
-		return nil, domain.ErrTokenReused
-	}
-
-	if session.TokenHash != u.jwtManager.HashToken(rawRefreshToken) {
+	if subtle.ConstantTimeCompare([]byte(session.TokenHash), []byte(u.jwtManager.HashToken(rawRefreshToken))) != 1 {
 		return nil, domain.ErrTokenInvalid
 	}
 
-	// Revoke token lama (Refresh Token Rotation)
-	if err := u.sessionRepo.Revoke(ctx, claims.TokenID); err != nil {
-		return nil, fmt.Errorf("gagal mencabut token lama: %w", err)
+	// Refresh Token Rotation: konsumsi token secara ATOMIK. Jika token sudah dicabut (reuse attempt)
+	// atau request lain dengan token yang sama menang lebih dulu (balapan), cabut seluruh keluarga
+	// token user. Pola check-then-revoke terpisah akan meloloskan dua request paralel sekaligus.
+	if _, err := u.sessionRepo.Consume(ctx, claims.TokenID); err != nil {
+		if errors.Is(err, domain.ErrTokenReused) {
+			_ = u.sessionRepo.RevokeAllForUser(ctx, claims.UserID)
+			return nil, domain.ErrTokenReused
+		}
+		return nil, domain.ErrTokenInvalid
 	}
 
 	user, err := u.userUsecase.GetByID(ctx, claims.UserID)

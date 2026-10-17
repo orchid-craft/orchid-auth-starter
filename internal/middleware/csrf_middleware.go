@@ -28,7 +28,7 @@ func ProtectCSRF(csrfManager *security.CSRFManager) func(http.Handler) http.Hand
 			}
 
 			if err := csrfManager.ValidateToken(headerToken, cookieVal); err != nil {
-				bunkerErr := bunker.New(bunker.StatusForbidden).SetMessage("validasi CSRF gagal: " + err.Error())
+				bunkerErr := httpUtil.NewAppError(bunker.StatusForbidden, "validasi CSRF gagal: "+err.Error())
 				httpUtil.ErrorResponse(w, bunkerErr)
 				return
 			}

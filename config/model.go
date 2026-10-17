@@ -1,6 +1,9 @@
 package config
 
-import "time"
+import (
+	"strings"
+	"time"
+)
 
 type LocalConfig struct {
 	AppName    string `env:"APP_NAME" envDefault:"orchid-auth-starter"`
@@ -11,13 +14,15 @@ type LocalConfig struct {
 	DebugMode  bool   `env:"DEBUG_MODE" envDefault:"true"`
 
 	// Security & Auth Configurations
-	AccessTokenSecret      string `env:"ACCESS_TOKEN_SECRET" envDefault:"super-secret-access-token-key-change-in-production-min-32-chars!"`
-	RefreshTokenSecret     string `env:"REFRESH_TOKEN_SECRET" envDefault:"super-secret-refresh-token-key-change-in-production-min-32-chars!"`
-	CSRFSecret             string `env:"CSRF_SECRET" envDefault:"super-secret-csrf-key-change-in-production-min-32-chars!"`
-	AccessTokenTTLMinutes  int    `env:"ACCESS_TOKEN_TTL_MINUTES" envDefault:"15"`
-	RefreshTokenTTLDays    int    `env:"REFRESH_TOKEN_TTL_DAYS" envDefault:"7"`
-	CookieSecure           bool   `env:"COOKIE_SECURE" envDefault:"false"`
-	CookieDomain           string `env:"COOKIE_DOMAIN" envDefault:""`
+	// Nilai default secret HANYA untuk development/test. Di luar itu, Validate() menolak
+	// default/placeholder (lihat validate.go). Jika envDefault di bawah diubah, ubah juga konstanta di validate.go.
+	AccessTokenSecret     string `env:"ACCESS_TOKEN_SECRET" envDefault:"super-secret-access-token-key-change-in-production-min-32-chars!"`
+	RefreshTokenSecret    string `env:"REFRESH_TOKEN_SECRET" envDefault:"super-secret-refresh-token-key-change-in-production-min-32-chars!"`
+	CSRFSecret            string `env:"CSRF_SECRET" envDefault:"super-secret-csrf-key-change-in-production-min-32-chars!"`
+	AccessTokenTTLMinutes int    `env:"ACCESS_TOKEN_TTL_MINUTES" envDefault:"15"`
+	RefreshTokenTTLDays   int    `env:"REFRESH_TOKEN_TTL_DAYS" envDefault:"7"`
+	CookieSecure          bool   `env:"COOKIE_SECURE" envDefault:"false"`
+	CookieDomain          string `env:"COOKIE_DOMAIN" envDefault:""`
 
 	// Rate Limiting Configurations (P1-3)
 	RateLimitAuthRequests      int `env:"RATE_LIMIT_AUTH_REQUESTS" envDefault:"10"`
@@ -36,6 +41,19 @@ func (c *LocalConfig) RefreshTokenTTL() time.Duration {
 	return time.Duration(c.RefreshTokenTTLDays) * 24 * time.Hour
 }
 
+// IsDevelopment bernilai true HANYA jika APP_ENV secara eksplisit "development" atau "test"
+// (tidak peka huruf besar/kecil). Hanya di mode ini secret default dan seed akun demo diizinkan.
+func (c *LocalConfig) IsDevelopment() bool {
+	switch strings.ToLower(strings.TrimSpace(c.AppEnv)) {
+	case "development", "test":
+		return true
+	default:
+		return false
+	}
+}
+
+// IsProduction bersifat fail-closed: lingkungan apa pun selain development/test dianggap production,
+// termasuk nilai kosong atau salah ketik ("prod", "Production", "staging").
 func (c *LocalConfig) IsProduction() bool {
-	return c.AppEnv == "production"
+	return !c.IsDevelopment()
 }

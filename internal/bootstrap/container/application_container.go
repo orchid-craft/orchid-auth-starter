@@ -42,8 +42,13 @@ func NewApplicationContainer(cfg *config.LocalConfig) (*DirectInjection, error) 
 	uUsecase := userUsecase.NewUserUsecase(uRepo)
 	aUsecase := authUsecase.NewAuthUsecase(uUsecase, sRepo, jwtManager, csrfManager, cfg.AccessTokenTTL())
 
-	// Seed akun default untuk testing/development
-	seedDefaultUsers(uUsecase)
+	// Seed akun demo (alice@example.com = admin, password publik) HANYA untuk development/test.
+	// Di production, akun admin dengan password yang diketahui siapa pun berarti pengambilalihan penuh.
+	if cfg.IsDevelopment() {
+		seedDefaultUsers(uUsecase)
+	} else {
+		logger.Info("Seed akun default dilewati (APP_ENV bukan development/test)")
+	}
 
 	di := &DirectInjection{
 		UserRepo:    uRepo,

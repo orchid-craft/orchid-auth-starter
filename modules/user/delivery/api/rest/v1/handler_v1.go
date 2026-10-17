@@ -26,7 +26,7 @@ func NewUserHandler(u usecase.UserUsecaseInterface) *userHandler {
 func (h *userHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 	claims, ok := security.GetClaimsContext(r.Context())
 	if !ok || claims == nil {
-		err := bunker.New(bunker.StatusUnAuthorized).SetMessage("claims pengguna tidak ditemukan di context")
+		err := httpUtil.NewAppError(bunker.StatusUnAuthorized, "claims pengguna tidak ditemukan di context")
 		httpUtil.ErrorResponse(w, err)
 		return
 	}
@@ -37,7 +37,7 @@ func (h *userHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			status = bunker.StatusNotFound
 		}
-		httpUtil.ErrorResponse(w, bunker.New(status).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(status, err.Error()))
 		return
 	}
 
@@ -48,20 +48,20 @@ func (h *userHandler) GetProfile(w http.ResponseWriter, r *http.Request) {
 func (h *userHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 	claims, ok := security.GetClaimsContext(r.Context())
 	if !ok || claims == nil {
-		err := bunker.New(bunker.StatusUnAuthorized).SetMessage("claims pengguna tidak ditemukan di context")
+		err := httpUtil.NewAppError(bunker.StatusUnAuthorized, "claims pengguna tidak ditemukan di context")
 		httpUtil.ErrorResponse(w, err)
 		return
 	}
 
 	var req reqModel.UpdateUserRequest
 	if err := json.NewDecoder(r.Body).Decode(&req); err != nil {
-		errBunker := bunker.New(bunker.StatusBadRequest).SetMessage("format request payload tidak valid")
+		errBunker := httpUtil.NewAppError(bunker.StatusBadRequest, "format request payload tidak valid")
 		httpUtil.ErrorResponse(w, errBunker)
 		return
 	}
 
 	if err := validator.ValidateStruct(&req); err != nil {
-		httpUtil.ErrorResponse(w, bunker.New(bunker.StatusBadRequest).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(bunker.StatusBadRequest, err.Error()))
 		return
 	}
 
@@ -71,7 +71,7 @@ func (h *userHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 		if errors.Is(err, domain.ErrUserNotFound) {
 			status = bunker.StatusNotFound
 		}
-		httpUtil.ErrorResponse(w, bunker.New(status).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(status, err.Error()))
 		return
 	}
 
@@ -82,7 +82,7 @@ func (h *userHandler) UpdateProfile(w http.ResponseWriter, r *http.Request) {
 func (h *userHandler) ListUsers(w http.ResponseWriter, r *http.Request) {
 	users, err := h.usecase.List(r.Context())
 	if err != nil {
-		httpUtil.ErrorResponse(w, bunker.New(bunker.StatusUnprocessableEntity).SetMessage(err.Error()))
+		httpUtil.ErrorResponse(w, httpUtil.NewAppError(bunker.StatusUnprocessableEntity, err.Error()))
 		return
 	}
 
