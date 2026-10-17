@@ -15,6 +15,7 @@ import (
 	"github.com/olympus-forge/logos"
 	"github.com/orchid-craft/orchid-auth-starter/config"
 	"github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/container"
+	"github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server/routes"
 	"github.com/orchid-craft/orchid-auth-starter/internal/middleware"
 )
 
@@ -42,13 +43,13 @@ func NewServer(c *container.Container) *Server {
 }
 
 func (s *Server) setupRoutes() {
-	routeSetups := []RouteSetup{
-		SetupCommonRoutes,
-		SetupAuthRoutes,
-		SetupUserRoutes,
-	}
-
-	SetupAllRoutes(s, routeSetups...)
+	routes.SetupAllRoutes(&routes.Dependencies{
+		App:         s.app,
+		Cfg:         s.cfg,
+		DI:          s.di,
+		Log:         s.log,
+		RateLimiter: s.rateLimiter,
+	})
 }
 
 func (s *Server) GetRateLimiter() *middleware.RateLimiterMiddleware {

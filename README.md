@@ -62,10 +62,13 @@ Aplikasi dibangun menggunakan template arsitektur **Orchid Starter** dengan rout
 │   │   └── server/
 │   │       ├── chi_server.go                     # Inisialisasi Chi Router & global middlewares
 │   │       └── restful_server/
-│   │           ├── application.go                # Route setups & middleware chaining (Auth & User)
+│   │           ├── http_util/                    # Success, NotFound, & HealthCheck handlers
 │   │           ├── restful_server.go             # Server lifecycle & graceful shutdown
-│   │           ├── routes.go                     # Centralized RouteSetup manager
-│   │           └── http_util/                    # Success, NotFound, & HealthCheck handlers
+│   │           └── routes/                       # Dedicated route registration module
+│   │               ├── auth_routes.go            # Route setups & middleware chaining (Auth)
+│   │               ├── user_routes.go            # Route setups & middleware chaining (User)
+│   │               ├── common_routes.go          # HealthCheck & general endpoints
+│   │               └── routes.go                 # Centralized RouteSetup manager & Dependencies
 │   ├── common/
 │   │   ├── env.go                                # Helper env parsing
 │   │   ├── request_context.go                    # Context request-id helpers
