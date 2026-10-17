@@ -8,7 +8,7 @@ import (
 	"sync"
 	"time"
 
-	bunker "github.com/yudhiana/bunker/errors"
+	bunker "github.com/olympus-forge/bunker/errors"
 	httpUtil "github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server/http_util"
 )
 

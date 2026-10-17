@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	modelCommon "github.com/orchid-craft/orchid-auth-starter/internal/common/model"
-	bunker "github.com/yudhiana/bunker/errors"
+	bunker "github.com/olympus-forge/bunker/errors"
 )
 
 func SuccessResponse(w http.ResponseWriter, data any) {

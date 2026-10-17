@@ -3,7 +3,7 @@ package httpUtil
 import (
 	"net/http"
 
-	bunker "github.com/yudhiana/bunker/errors"
+	bunker "github.com/olympus-forge/bunker/errors"
 )
 
 func NotFoundHandler(w http.ResponseWriter, r *http.Request) {

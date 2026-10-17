@@ -5,7 +5,7 @@ import (
 	"errors"
 	"net/http"
 
-	bunker "github.com/yudhiana/bunker/errors"
+	bunker "github.com/olympus-forge/bunker/errors"
 	httpUtil "github.com/orchid-craft/orchid-auth-starter/internal/bootstrap/server/restful_server/http_util"
 	reqModel "github.com/orchid-craft/orchid-auth-starter/modules/user/delivery/models/request"
 	"github.com/orchid-craft/orchid-auth-starter/modules/user/domain"
